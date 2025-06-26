@@ -15,6 +15,7 @@ dist-server/
 # deps
 node_modules/
 .wrangler
+worker-configuration.d.ts
 
 # env
 .env

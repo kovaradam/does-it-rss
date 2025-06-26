@@ -1,12 +1,17 @@
 {
   "compilerOptions": {
+    "noEmit": true,
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "strict": true,
     "skipLibCheck": true,
     "lib": ["ESNext"],
-    "types": ["vite/client"],
+    "types": [
+      "vite/client",
+      "vitest/importMeta",
+      "./worker-configuration.d.ts"
+    ],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx"
   }

@@ -6,16 +6,22 @@
     "build": "vite build",
     "preview": "$npm_execpath run build && vite preview",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
-    "format": "prettier . --write"
+    "format": "prettier . --write",
+    "test": "vitest",
+    "health": "$npm_execpath run cf-typegen; tsc"
   },
   "dependencies": {
+    "cheerio": "^1.1.0",
     "hono": "^4.8.3"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.2.3",
+    "msw": "^2.10.2",
     "prettier": "3.6.1",
+    "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vite-ssr-components": "^0.3.0",
+    "vitest": "^3.2.4",
     "wrangler": "^4.17.0"
   }
 }
