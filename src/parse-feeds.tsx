@@ -1,11 +1,13 @@
-import * as cheerio from "cheerio";
 import { renderToString } from "hono/jsx/dom/server";
 import {
   booleanFilter,
   enumerate,
   filterUnique,
+  getDocumentQuery,
   hrefToCompare,
+  getIsRssChannel,
   normalizeHref,
+  DocumentQuery,
 } from "./utils";
 
 type DefinitionResult = {
@@ -45,7 +47,7 @@ export async function getChannelsFromUrl(
 
   const query = getDocumentQuery(response);
 
-  const isRssChannelFile = query("feed,rss").length === 1;
+  const isRssChannelFile = getIsRssChannel(query);
 
   if (isRssChannelFile) {
     return [
@@ -95,12 +97,6 @@ export async function getChannelsFromUrl(
 }
 
 const ERRORS = enumerate(["no-links", "invalid-url"]);
-
-function getDocumentQuery(xmlInput: string) {
-  return cheerio.load(xmlInput, { xml: true });
-}
-
-type DocumentQuery = ReturnType<typeof getDocumentQuery>;
 
 function getChannelMeta(query: DocumentQuery) {
   return {

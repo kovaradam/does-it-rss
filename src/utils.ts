@@ -1,3 +1,5 @@
+import * as cheerio from "cheerio";
+
 export function filterUnique<T>(
   ...[equality]: T extends object ? [(a: T, b: T) => boolean] : []
 ) {
@@ -27,4 +29,14 @@ export function enumerate<T extends readonly string[]>(
   return Object.fromEntries(input.map((v) => [v, v])) as ReturnType<
     typeof enumerate<T>
   >;
+}
+
+export function getDocumentQuery(xmlInput: string) {
+  return cheerio.load(xmlInput, { xml: true });
+}
+
+export type DocumentQuery = ReturnType<typeof getDocumentQuery>;
+
+export function getIsRssChannel(query: DocumentQuery) {
+  return query("feed,rss").length === 1;
 }
