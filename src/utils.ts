@@ -42,7 +42,7 @@ export function getIsRssChannel(query: DocumentQuery) {
   return query("feed,rss").length === 1;
 }
 
-export async function fetchChannel(url: URL, signal: AbortSignal) {
+export function fetchChannel(url: URL, signal: AbortSignal) {
   return ResultAsync.fromPromise(
     fetch(url, { signal: signal }).then((r) => {
       if (!r.ok) {

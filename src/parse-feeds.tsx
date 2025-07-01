@@ -59,7 +59,7 @@ export async function getChannelsFromUrl(
   const links = parseLinksFromHtml(query);
 
   if (!links.length) {
-    throw new Error(ERRORS["no-links"]);
+    return errAsync(ERRORS["no-links"]);
   }
 
   const nextRecursion = {
