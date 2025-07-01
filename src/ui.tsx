@@ -1,11 +1,9 @@
-import { Context } from "hono/jsx";
-import { getChannelsFromUrl } from "./parse-feeds";
-import { HonoRequest } from "hono";
+import { DefinitionResult } from "./parse-feeds";
 
 export async function Page(props: {
   result: {
     urlParam: string;
-    feeds: Awaited<ReturnType<typeof getChannelsFromUrl>>;
+    feeds: DefinitionResult[];
   } | null;
 }) {
   return (

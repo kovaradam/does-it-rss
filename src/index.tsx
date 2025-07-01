@@ -16,10 +16,10 @@ app.get("/", async (c) => {
         urlParam
           ? {
               urlParam,
-              feeds: await getChannelsFromUrl(
-                new URL(urlParam),
-                c.req.raw.signal,
-              ),
+              feeds:
+                (
+                  await getChannelsFromUrl(new URL(urlParam), c.req.raw.signal)
+                ).unwrapOr([]) ?? [],
             }
           : null
       }

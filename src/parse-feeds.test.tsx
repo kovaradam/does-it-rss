@@ -69,10 +69,12 @@ afterAll(() => server.close());
 afterEach(() => server.resetHandlers());
 
 test("feed file link returns feed definition", async () => {
-  const result = await getChannelsFromUrl(
-    new URL(FEED_MAIN_URL),
-    new AbortController().signal,
-  );
+  const result = (
+    await getChannelsFromUrl(
+      new URL(FEED_MAIN_URL),
+      new AbortController().signal,
+    )
+  ).unwrapOr(null);
 
   expect(result?.length).toBe(1);
   const feed = result?.[0];
@@ -81,13 +83,12 @@ test("feed file link returns feed definition", async () => {
 });
 
 test("page link returns links list", async () => {
-  const result = await getChannelsFromUrl(
-    new URL(PAGE_URL),
-    new AbortController().signal,
-  );
+  const result = (
+    await getChannelsFromUrl(new URL(PAGE_URL), new AbortController().signal)
+  ).unwrapOr(null);
 
   expect(result?.length).toBe(3);
-  const [feedMain, feed1, feed2] = result!;
+  const [feedMain, feed1, feed2] = result ?? [];
 
   expect(feedMain?.url?.href).toBe(FEED_MAIN_URL);
   expect(feedMain?.feedXml).toBe(TEST_FEED_DATA.TEST_CHANNEL_2);

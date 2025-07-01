@@ -1,16 +1,18 @@
 import { renderToString } from "hono/jsx/dom/server";
 import {
   booleanFilter,
-  enumerate,
   filterUnique,
   getDocumentQuery,
   hrefToCompare,
   getIsRssChannel,
   normalizeHref,
   DocumentQuery,
+  fetchChannel,
+  ERRORS,
 } from "./utils";
+import { errAsync, okAsync, ResultAsync } from "neverthrow";
 
-type DefinitionResult = {
+export type DefinitionResult = {
   feedXml: string;
   content: { title: string; description: string | undefined };
   url: URL;
@@ -24,39 +26,34 @@ export async function getChannelsFromUrl(
     fetched: [] as string[],
     parent: null as string | null,
   },
-): Promise<DefinitionResult[] | null> {
+): Promise<ResultAsync<DefinitionResult[] | null, keyof typeof ERRORS>> {
   const u = (linkUrl: string | URL) => new URL(linkUrl, url);
 
   const href = normalizeHref(url.href);
   if (recursion.level === 3 || recursion.fetched.includes(href)) {
-    return null;
+    return errAsync(ERRORS["max-depth"]);
   }
 
-  const response = await fetch(url, { signal: abortSignal })
-    .then((r) => {
-      if (!r.ok) {
-        throw "";
-      }
-      return r.text();
-    })
-    .catch((_) => {
-      throw new Error(ERRORS["invalid-url"]);
-    });
+  const response = await fetchChannel(url, abortSignal);
+
+  if (!response.isOk()) {
+    return errAsync(response.error);
+  }
 
   recursion.fetched.push(href);
 
-  const query = getDocumentQuery(response);
+  const query = getDocumentQuery(response.value);
 
   const isRssChannelFile = getIsRssChannel(query);
 
   if (isRssChannelFile) {
-    return [
+    return okAsync([
       {
-        feedXml: response,
+        feedXml: response.value,
         url: url,
         content: getChannelMeta(query),
       },
-    ];
+    ]);
   }
 
   const links = parseLinksFromHtml(query);
@@ -85,7 +82,7 @@ export async function getChannelsFromUrl(
     )
   )
     .filter((result) => result.status === "fulfilled")
-    .flatMap((result) => result.value)
+    .flatMap((result) => result.value.unwrapOr(null))
     .filter(booleanFilter)
     .filter(
       filterUnique(
@@ -93,10 +90,8 @@ export async function getChannelsFromUrl(
       ),
     );
 
-  return traversedLinks;
+  return okAsync(traversedLinks);
 }
-
-const ERRORS = enumerate(["no-links", "invalid-url"]);
 
 function getChannelMeta(query: DocumentQuery) {
   return {

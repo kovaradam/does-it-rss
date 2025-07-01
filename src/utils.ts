@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import { ResultAsync } from "neverthrow";
 
 export function filterUnique<T>(
   ...[equality]: T extends object ? [(a: T, b: T) => boolean] : []
@@ -40,3 +41,20 @@ export type DocumentQuery = ReturnType<typeof getDocumentQuery>;
 export function getIsRssChannel(query: DocumentQuery) {
   return query("feed,rss").length === 1;
 }
+
+export async function fetchChannel(url: URL, signal: AbortSignal) {
+  return ResultAsync.fromPromise(
+    fetch(url, { signal: signal }).then((r) => {
+      if (!r.ok) {
+        throw "";
+      }
+      return r.text();
+    }),
+    (_) => {
+      console.error("error fetching channel", url.href, _);
+      return ERRORS["invalid-url"];
+    },
+  );
+}
+
+export const ERRORS = enumerate(["no-links", "invalid-url", "max-depth"]);
