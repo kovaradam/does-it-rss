@@ -10,7 +10,7 @@ import {
   fetchChannel,
   ERRORS,
 } from "./utils";
-import { errAsync, okAsync, ResultAsync } from "neverthrow";
+import { err, ok, Result } from "neverthrow";
 
 export type DefinitionResult = {
   feedXml: string;
@@ -26,18 +26,18 @@ export async function getChannelsFromUrl(
     fetched: [] as string[],
     parent: null as string | null,
   },
-): Promise<ResultAsync<DefinitionResult[] | null, keyof typeof ERRORS>> {
+): Promise<Result<DefinitionResult[] | null, keyof typeof ERRORS>> {
   const u = (linkUrl: string | URL) => new URL(linkUrl, url);
 
   const href = normalizeHref(url.href);
   if (recursion.level === 3 || recursion.fetched.includes(href)) {
-    return errAsync(ERRORS["max-depth"]);
+    return err(ERRORS["max-depth"]);
   }
 
   const response = await fetchChannel(url, abortSignal);
 
   if (!response.isOk()) {
-    return errAsync(response.error);
+    return err(response.error);
   }
 
   recursion.fetched.push(href);
@@ -47,7 +47,7 @@ export async function getChannelsFromUrl(
   const isRssChannelFile = getIsRssChannel(query);
 
   if (isRssChannelFile) {
-    return okAsync([
+    return ok([
       {
         feedXml: response.value,
         url: url,
@@ -59,7 +59,7 @@ export async function getChannelsFromUrl(
   const links = parseLinksFromHtml(query);
 
   if (!links.length) {
-    return errAsync(ERRORS["no-links"]);
+    return err(ERRORS["no-links"]);
   }
 
   const nextRecursion = {
@@ -90,7 +90,7 @@ export async function getChannelsFromUrl(
       ),
     );
 
-  return okAsync(traversedLinks);
+  return ok(traversedLinks);
 }
 
 function getChannelMeta(query: DocumentQuery) {
