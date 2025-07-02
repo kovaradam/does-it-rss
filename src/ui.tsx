@@ -1,9 +1,9 @@
-import { DefinitionResult } from "./parse-feeds";
+import { DefinitionResultDto } from "./parse-feeds";
 
 export async function Page(props: {
   result: {
     urlParam: string;
-    feeds: DefinitionResult[];
+    feeds: DefinitionResultDto[];
   } | null;
 }) {
   return (

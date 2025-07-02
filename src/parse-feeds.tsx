@@ -18,6 +18,8 @@ export type DefinitionResult = {
   url: URL;
 };
 
+export type DefinitionResultDto = Omit<DefinitionResult, "feedXml">;
+
 export async function getChannelsFromUrl(
   url: URL,
   abortSignal: AbortSignal,
@@ -89,7 +91,6 @@ export async function getChannelsFromUrl(
         (a, b) => hrefToCompare(a.url.href) === hrefToCompare(b.url.href),
       ),
     );
-
   return ok(traversedLinks);
 }
 

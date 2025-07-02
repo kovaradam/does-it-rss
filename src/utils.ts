@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import { ResultAsync } from "neverthrow";
+import { err, ok, ResultAsync } from "neverthrow";
 
 export function filterUnique<T>(
   ...[equality]: T extends object ? [(a: T, b: T) => boolean] : []
@@ -42,8 +42,8 @@ export function getIsRssChannel(query: DocumentQuery) {
   return query("feed,rss").length === 1;
 }
 
-export function fetchChannel(url: URL, signal: AbortSignal) {
-  return ResultAsync.fromPromise(
+export async function fetchChannel(url: URL, signal: AbortSignal) {
+  const result = await ResultAsync.fromPromise(
     fetch(url, { signal: signal }).then((r) => {
       if (!r.ok) {
         throw "";
@@ -55,6 +55,26 @@ export function fetchChannel(url: URL, signal: AbortSignal) {
       return ERRORS["invalid-url"];
     },
   );
+  return result;
 }
 
 export const ERRORS = enumerate(["no-links", "invalid-url", "max-depth"]);
+
+export function toUrl(input: unknown) {
+  try {
+    return ok(new URL(input as string));
+  } catch {
+    return err();
+  }
+}
+
+export function timer(span: unknown) {
+  let t1 = Date.now();
+
+  return (label?: unknown) => {
+    const now = Date.now();
+    const t2 = now - t1;
+    t1 = now;
+    console.log(label ?? "", span, t2 / 1000, "s");
+  };
+}
