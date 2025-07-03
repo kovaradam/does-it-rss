@@ -2,7 +2,12 @@ import { Hono } from "hono";
 import { renderer } from "./renderer";
 import { getChannelsFromUrl } from "./parse-feeds";
 import { Page } from "./ui";
-import { toUrl } from "./utils";
+import {
+  fetchChannel,
+  getDocumentQuery,
+  getIsRssChannel,
+  toUrl,
+} from "./utils";
 
 const app = new Hono();
 
@@ -55,13 +60,22 @@ app.get("/json", async (c) => {
 });
 
 app.get("/json-feed", async (c) => {
-  const urlParam = c.req.query("feed");
+  const feedUrl = toUrl(c.req.query("feed"));
+  if (feedUrl.isErr()) {
+    return c.json({ error: "invalid url format" }, { status: 400 });
+  }
 
-  const feeds = urlParam
-    ? await getChannelsFromUrl(new URL(urlParam), c.req.raw.signal)
-    : [];
+  const feedXml = await fetchChannel(feedUrl.value, c.req.raw.signal);
 
-  return c.json({ feeds });
+  if (feedXml.isErr()) {
+    return c.json({ error: "failed to fetch from url" }, { status: 400 });
+  }
+
+  const query = getDocumentQuery(feedXml.value);
+
+  if (!getIsRssChannel(query)) {
+    return c.json({ error: "is not valid rss feed" }, { status: 400 });
+  }
 });
 
 export default app;
