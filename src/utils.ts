@@ -33,7 +33,16 @@ export function enumerate<T extends readonly string[]>(
 }
 
 export function getDocumentQuery(xmlInput: string) {
-  return cheerio.load(xmlInput, { xml: true });
+  return cheerio.load(
+    xmlInput,
+    {
+      scriptingEnabled: false,
+      xml: {
+        decodeEntities: false,
+      },
+    },
+    false,
+  );
 }
 
 export type DocumentQuery = ReturnType<typeof getDocumentQuery>;
@@ -77,4 +86,11 @@ export function timer(span: unknown) {
     t1 = now;
     console.log(label ?? "", span, t2 / 1000, "s");
   };
+}
+
+export async function timed<T>(span: unknown, op: () => Promise<T>) {
+  const t = timer(span);
+  const result = await op();
+  t();
+  return result;
 }

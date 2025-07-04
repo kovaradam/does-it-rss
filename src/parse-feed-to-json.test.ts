@@ -113,7 +113,7 @@ test("Correctly parses sample feed", () => {
   expect(parsed.items[3]?.guid?.value).toBe("1983-05-06+lifestyle+joebob+2");
   expect(parsed.items[3]?.guid?.isPermaLink).toBe("false");
   expect(parsed.items[3]?.description).toBe(
-    "I'm headed for France. I wasn't gonna go this year, but then last week <a href=\"https://www.imdb.com/title/tt0086525/\">Valley Girl</a> came out and I said to myself, Joe Bob, you gotta get out of the country for a while.",
+    "<![CDATA[I'm headed for France. I wasn't gonna go this year, but then last week <a href=\"https://www.imdb.com/title/tt0086525/\">Valley Girl</a> came out and I said to myself, Joe Bob, you gotta get out of the country for a while.]]>",
   );
 });
 
@@ -189,6 +189,66 @@ const SAMPLE_FEED = `
       <item>
         <description><![CDATA[I'm headed for France. I wasn't gonna go this year, but then last week <a href="https://www.imdb.com/title/tt0086525/">Valley Girl</a> came out and I said to myself, Joe Bob, you gotta get out of the country for a while.]]></description>
         <guid isPermaLink="false">1983-05-06+lifestyle+joebob+2</guid>
+      </item>
+    </channel>
+  </rss>
+  `;
+
+test("handles namespaced content", () => {
+  const result = parseFeedToJson(getDocumentQuery(FEED_NAMESPACES));
+
+  if (result.isErr()) {
+    expect(false).toBe(true);
+    return;
+  }
+
+  const parsed = result.value;
+
+  expect(parsed["content:encoded"]).toBe("Encoded content");
+  expect(parsed["atom:link"]).toMatchObject({
+    href: "http://dallas.example.com/rss.xml",
+    length: "xyz",
+    hreflang: "en",
+    title: "RSS",
+    type: "application/rss+xml",
+    rel: "self",
+  });
+  expect(parsed["creativeCommons:license"]).toBe(
+    "https://www.creativecommons.org/licenses/by-nd/1.0",
+  );
+
+  expect(parsed.items[0]?.["creativeCommons:license"]).toBe(
+    "https://www.creativecommons.org/licenses/by-nd/1.0",
+  );
+  expect(parsed.items[0]?.["trackback:about"]).toBe(
+    "https://www.imdb.com/title/tt0086525",
+  );
+  expect(parsed.items[0]?.["trackback:ping"]).toBe(
+    "https://dallas.example.com/trackback/tb.php?id=1983/06/joebob2.htm",
+  );
+
+  expect(parsed.items[1]?.["trackback:about"]).toBe(
+    "http://ekzemplo.com/tb.cgi?tb_id=180",
+  );
+  expect(parsed.items[1]?.["trackback:ping"]).toBe(
+    "http://ekzemplo.com/tb.cgi?tb_id=180",
+  );
+});
+
+const FEED_NAMESPACES = `
+  <rss>
+    <channel>
+      <content:encoded>Encoded content</content:encoded>
+      <atom:link href="http://dallas.example.com/rss.xml" title="RSS" length="xyz" hreflang="en" rel="self" type="application/rss+xml" />
+      <creativeCommons:license>https://www.creativecommons.org/licenses/by-nd/1.0</creativeCommons:license>
+      <item>
+        <creativeCommons:license>https://www.creativecommons.org/licenses/by-nd/1.0</creativeCommons:license>
+        <trackback:ping>https://dallas.example.com/trackback/tb.php?id=1983/06/joebob2.htm</trackback:ping>
+        <trackback:about>https://www.imdb.com/title/tt0086525</trackback:about>
+      </item>
+      <item>
+        <trackback:about rdf:resource="http://ekzemplo.com/tb.cgi?tb_id=180"/>
+        <trackback:ping rdf:resource="http://ekzemplo.com/tb.cgi?tb_id=180"/>
       </item>
     </channel>
   </rss>

@@ -6,22 +6,26 @@ import {
   fetchChannel,
   getDocumentQuery,
   getIsRssChannel,
+  timed,
   toUrl,
 } from "./utils";
+import { parseFeedToJson } from "./parse-feed-to-json";
 
 const app = new Hono();
 
 app.use(renderer);
 
 async function getChannelsFromUrlPublic(url: URL, signal: AbortSignal) {
-  const result = await getChannelsFromUrl(url, signal)
-    .then((channels) => channels.unwrapOr([]) ?? [])
-    .then((channels) =>
-      channels.map((channel) => ({
-        url: channel.url,
-        content: channel.content,
-      })),
-    );
+  const result = await timed(url.href, () =>
+    getChannelsFromUrl(url, signal)
+      .then((channels) => channels.unwrapOr([]) ?? [])
+      .then((channels) =>
+        channels.map((channel) => ({
+          url: channel.url,
+          content: channel.content,
+        })),
+      ),
+  );
   return result;
 }
 
@@ -75,6 +79,14 @@ app.get("/json-feed", async (c) => {
 
   if (!getIsRssChannel(query)) {
     return c.json({ error: "is not valid rss feed" }, { status: 400 });
+  }
+
+  const parsed = parseFeedToJson(query);
+
+  if (parsed.isOk()) {
+    return c.json({ feed: parsed.value });
+  } else {
+    return c.json({ error: "could not parse rss feed" }, { status: 400 });
   }
 });
 

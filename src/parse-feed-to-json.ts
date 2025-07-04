@@ -5,12 +5,28 @@ import { DocumentQuery } from "./utils";
  * Spec from https://www.rssboard.org/rss-specification
  *
  * RSS places restrictions on the first non-whitespace characters of the data in <link> and <url> elements. The data in these elements must begin with an IANA-registered URI scheme, such as http://, https://, news://, mailto: and ftp://.
+ *
+ * When a namespace element duplicates the functionality of an element defined in RSS, the core element should be used.
  */
 export type RssFeed = {
   title: string | undefined;
   /** The URL to the HTML website corresponding to the channel.*/
   link: string | undefined;
   description: string | undefined;
+  /** The content:encoded element can be used in conjunction with the description element to provide an item's full content along with a shorter summary. Under this approach, the complete text of the item is presented in content:encoded and the summary in description. */
+  "content:encoded": string | undefined;
+  /** The license element, when present in an RSS channel or Atom feed element, indicates that all of the feed's content has been made available under a copyright license */
+  "creativeCommons:license": string | undefined;
+  "atom:link":
+    | {
+        href: string | undefined;
+        length: string | undefined;
+        hreflang: string | undefined;
+        title: string | undefined;
+        type: string | undefined;
+        rel: string | undefined;
+      }
+    | undefined;
   /**
    * A channel may contain any number of <item>s. An item may represent a "story" -- much like a story in a newspaper or magazine; if so its description is a synopsis of the story, and the link points to the full story. An item may also be complete in itself, if so, the description contains the text (entity-encoded HTML is allowed; see examples), and the link and title may be omitted. All elements of an item are optional, however at least one of title or description must be present.
    */
@@ -42,6 +58,11 @@ export type RssFeed = {
       | undefined;
     /** The RSS channel that the item came from. */
     source: { value: string | undefined; url: string | undefined } | undefined;
+    "creativeCommons:license": RssFeed["creativeCommons:license"];
+    /** The about element, when present in an item, identifies a trackback URL on another site that was pinged in response to the item  */
+    "trackback:about": string | undefined;
+    /** The ping element, when present in an item, identifies the item's trackback URL */
+    "trackback:ping": string | undefined;
   }>;
 
   /** The language the channel is written in. This allows aggregators to group all Italian language sites, for example, on a single page. A list of allowable values for this element, as provided by Netscape, is here. You may also use values defined by the W3C.	en-us */
@@ -115,41 +136,66 @@ export type RssFeed = {
 };
 
 export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
+  const htmlVal = <T>(selector: T) => ({
+    selector,
+    value: "innerHTML",
+  });
+
   const parsed = query.extract({
     channel: {
       selector: "channel",
       value: {
-        description: ">description",
-        title: ">title",
-        link: ">link",
-        language: ">language",
-        copyright: ">copyright",
-        managingEditor: ">managingEditor",
-        webMaster: ">webMaster",
-        pubDate: ">pubDate",
-        lastBuildDate: ">lastBuildDate",
+        description: htmlVal(">description"),
+        title: htmlVal(">title"),
+        link: htmlVal(">link"),
+        "content:encoded": htmlVal(">content\\:encoded"),
+        "creativeCommons:license": htmlVal(">creativeCommons\\:license"),
+        "atom:link": {
+          selector: ">atom\\:link",
+          value(el) {
+            const elQuery = query(el);
+
+            return {
+              href: elQuery.attr("href"),
+              length: elQuery.attr("length"),
+              hreflang: elQuery.attr("hreflang"),
+              title: elQuery.attr("title"),
+              type: elQuery.attr("type"),
+              rel: elQuery.attr("rel"),
+            };
+          },
+        },
+        language: htmlVal(">language"),
+        copyright: htmlVal(">copyright"),
+        managingEditor: htmlVal(">managingEditor"),
+        webMaster: htmlVal(">webMaster"),
+        pubDate: htmlVal(">pubDate"),
+        lastBuildDate: htmlVal(">lastBuildDate"),
         categories: [
           {
             selector: ">category",
             value(el) {
               const elQuery = query(el);
-              return { value: elQuery.text(), domain: elQuery.attr("domain") };
+              return {
+                value: elQuery.html() ?? undefined,
+                domain: elQuery.attr("domain"),
+              };
             },
           },
         ],
-        generator: ">generator",
-        docs: ">docs",
-        ttl: ">ttl",
-        rating: ">rating",
+        generator: htmlVal(">generator"),
+        docs: htmlVal(">docs"),
+        ttl: htmlVal(">ttl"),
+        rating: htmlVal(">rating"),
         image: {
           selector: ">image",
           value: {
-            url: ">url",
-            title: ">title",
-            link: ">link",
-            width: ">width",
-            height: ">height",
-            description: ">description",
+            url: htmlVal(">url"),
+            title: htmlVal(">title"),
+            link: htmlVal(">link"),
+            width: htmlVal(">width"),
+            height: htmlVal(">height"),
+            description: htmlVal(">description"),
           },
         },
         cloud: {
@@ -165,15 +211,15 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
             };
           },
         },
-        skipHours: [">skipHours>hour"],
-        skipDays: [">skipDays>day"],
+        skipHours: [htmlVal(">skipHours>hour")],
+        skipDays: [htmlVal(">skipDays>day")],
         textInput: {
           selector: ">textInput",
           value: {
-            description: ">description",
-            link: ">link",
-            name: ">name",
-            title: ">title",
+            description: htmlVal(">description"),
+            link: htmlVal(">link"),
+            name: htmlVal(">name"),
+            title: htmlVal(">title"),
           },
         },
 
@@ -181,19 +227,20 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
           {
             selector: ">item",
             value: {
-              title: ">title",
-              description: ">description",
-              link: ">link",
-              author: ">author",
-              pubDate: ">pubDate",
-              comments: ">comments",
+              title: htmlVal(">title"),
+              description: htmlVal(">description"),
+              link: htmlVal(">link"),
+              author: htmlVal(">author"),
+              pubDate: htmlVal(">pubDate"),
+              comments: htmlVal(">comments"),
+              "creativeCommons:license": htmlVal(">creativeCommons\\:license"),
               categories: [
                 {
                   selector: ">category",
                   value(el) {
                     const elQuery = query(el);
                     return {
-                      value: elQuery.text(),
+                      value: elQuery.html() ?? undefined,
                       domain: elQuery.attr("domain"),
                     };
                   },
@@ -205,7 +252,7 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
                 value(el) {
                   const elQuery = query(el);
                   return {
-                    value: elQuery.text(),
+                    value: elQuery.html() ?? undefined,
                     isPermaLink: elQuery.attr("isPermaLink"),
                   };
                 },
@@ -226,9 +273,24 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
                 value(el) {
                   const elQuery = query(el);
                   return {
-                    value: elQuery.text(),
+                    value: elQuery.html() ?? undefined,
                     url: elQuery.attr("url"),
                   };
+                },
+              },
+
+              "trackback:about": {
+                selector: ">trackback\\:about",
+                value(el) {
+                  const elQuery = query(el);
+                  return elQuery.text() || elQuery.attr("rdf:resource");
+                },
+              },
+              "trackback:ping": {
+                selector: ">trackback\\:ping",
+                value(el) {
+                  const elQuery = query(el);
+                  return elQuery.text() || elQuery.attr("rdf:resource");
                 },
               },
             },
