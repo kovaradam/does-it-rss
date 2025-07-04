@@ -60,7 +60,7 @@ test("Correctly parses sample feed", () => {
   });
 
   expect(parsed.items.length).toBe(4);
-  expect(parsed.items[0].categories?.[0]?.value).toBe(undefined);
+  expect(parsed.items[0]?.categories?.[0]?.value).toBe(undefined);
   expect(parsed.items[0]?.title).toBe(
     "Seventh Heaven! Ryan Hurls Another No Hitter",
   );
