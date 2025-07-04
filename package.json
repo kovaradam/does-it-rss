@@ -1,5 +1,4 @@
 {
-  "packageManager": "pnpm@10.12.14",
   "name": "does-it-rss",
   "type": "module",
   "scripts": {
@@ -29,5 +28,6 @@
     "vite-ssr-components": "^0.3.0",
     "vitest": "^3.2.4",
     "wrangler": "^4.17.0"
-  }
+  },
+  "packageManager": "pnpm@10.12.4+sha256.cadfd9e6c9fcc2cb76fe7c0779a5250b632898aea5f53d833a73690c77a778d9"
 }
