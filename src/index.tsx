@@ -9,7 +9,7 @@ import {
   timed,
   toUrl,
 } from "./utils";
-import { parseFeedToJson } from "./parse-feed-to-json";
+import { getFeedExtansions, parseFeedToJson } from "./parse-feed-to-json";
 
 const app = new Hono();
 
@@ -83,11 +83,16 @@ app.get("/json-feed", async (c) => {
 
   const parsed = parseFeedToJson(query);
 
-  if (parsed.isOk()) {
-    return c.json({ feed: parsed.value });
-  } else {
+  if (parsed.isErr()) {
     return c.json({ error: "could not parse rss feed" }, { status: 400 });
   }
+
+  const extensions =
+    c.req.query("extensions") !== "false"
+      ? await getFeedExtansions(parsed.value)
+      : undefined;
+
+  return c.json({ feed: parsed.value, extensions });
 });
 
 export default app;

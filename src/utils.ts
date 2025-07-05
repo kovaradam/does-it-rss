@@ -1,5 +1,5 @@
-import * as cheerio from "cheerio";
-import { err, ok, ResultAsync } from "neverthrow";
+import { load } from "cheerio/slim";
+import { err, fromPromise, ok, ResultAsync } from "neverthrow";
 
 export function filterUnique<T>(
   ...[equality]: T extends object ? [(a: T, b: T) => boolean] : []
@@ -32,16 +32,24 @@ export function enumerate<T extends readonly string[]>(
   >;
 }
 
-export function getDocumentQuery(xmlInput: string) {
-  return cheerio.load(
-    xmlInput,
-    {
-      scriptingEnabled: false,
-      xml: {
-        decodeEntities: false,
-      },
+const parserOptions = {
+  scriptingEnabled: false,
+  xml: {
+    decodeEntities: false,
+  },
+};
+
+export function getDocumentQuery(input: string) {
+  return load(input, parserOptions, false);
+}
+
+export async function getDocumentQueryFromUrl(input: URL) {
+  return fromPromise(
+    fetch(input).then(async (r) => getDocumentQuery(await r.text())),
+    (e) => {
+      console.error(e);
+      err(e);
     },
-    false,
   );
 }
 

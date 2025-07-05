@@ -74,6 +74,8 @@ test("Correctly parses sample feed", () => {
     "https://dallas.example.com/1991/05/02/nolan.htm",
   );
   expect(parsed.items[0]?.guid?.isPermaLink).toBe(undefined);
+  expect(parsed.items[0]?.["extensions:imageUrl"]).toBe("https://item.img");
+  expect(parsed.items[0]?.["dc:creator"]).toBe("bob.brock@dallas.example.com");
 
   expect(parsed.items[1]?.title).toBe("Joe Bob Goes to the Drive-In");
   expect(parsed.items[1]?.author).toBe(
@@ -109,11 +111,17 @@ test("Correctly parses sample feed", () => {
   expect(parsed.items[2]?.description).toBe(
     "I'm headed for France. I wasn't gonna go this year, but then last week &lt;a href=\"https://www.imdb.com/title/tt0086525/\"&gt;Valley Girl&lt;/a&gt; came out and I said to myself, Joe Bob, you gotta get out of the country for a while.",
   );
+  expect(parsed.items[2]?.["extensions:imageUrl"]).toBe(
+    "https://media.content.img",
+  );
 
   expect(parsed.items[3]?.guid?.value).toBe("1983-05-06+lifestyle+joebob+2");
   expect(parsed.items[3]?.guid?.isPermaLink).toBe("false");
   expect(parsed.items[3]?.description).toBe(
     "<![CDATA[I'm headed for France. I wasn't gonna go this year, but then last week <a href=\"https://www.imdb.com/title/tt0086525/\">Valley Girl</a> came out and I said to myself, Joe Bob, you gotta get out of the country for a while.]]>",
+  );
+  expect(parsed.items[3]?.["extensions:imageUrl"]).toBe(
+    "https://content.encoded.img",
   );
 });
 
@@ -169,6 +177,8 @@ const SAMPLE_FEED = `
         <link>https://dallas.example.com/1991/05/02/nolan.htm</link>
         <description>Texas Rangers pitcher Nolan Ryan hurled the seventh no-hitter of his legendary career on Arlington Appreciation Night, defeating the Toronto Blue Jays 3-0. The 44-year-old struck out 16 batters before a crowd of 33,439.</description>
         <guid>https://dallas.example.com/1991/05/02/nolan.htm</guid>
+        <enclosure url="https://item.img" type="image/jpeg"/>
+        <dc:creator>bob.brock@dallas.example.com</dc:creator>
       </item>
       <item>
         <author>jbb@dallas.example.com (Joe Bob Briggs)</author>
@@ -185,10 +195,13 @@ const SAMPLE_FEED = `
       <item>
         <description>I'm headed for France. I wasn't gonna go this year, but then last week &lt;a href="https://www.imdb.com/title/tt0086525/"&gt;Valley Girl&lt;/a&gt; came out and I said to myself, Joe Bob, you gotta get out of the country for a while.</description>
         <guid isPermaLink="false">tag:dallas.example.com,4131:news</guid>
+        <media:content url="https://media.content.img" medium="image"/>
+
       </item>
       <item>
         <description><![CDATA[I'm headed for France. I wasn't gonna go this year, but then last week <a href="https://www.imdb.com/title/tt0086525/">Valley Girl</a> came out and I said to myself, Joe Bob, you gotta get out of the country for a while.]]></description>
         <guid isPermaLink="false">1983-05-06+lifestyle+joebob+2</guid>
+        <content:encoded><![CDATA[<img src='https://content.encoded.img'/>]]></content:encoded>
       </item>
     </channel>
   </rss>

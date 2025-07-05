@@ -1,5 +1,6 @@
 import { err, ok, Result } from "neverthrow";
-import { DocumentQuery } from "./utils";
+import { DocumentQuery, getDocumentQueryFromUrl, toUrl } from "./utils";
+import { load } from "cheerio/slim";
 
 /**
  * Spec from https://www.rssboard.org/rss-specification
@@ -9,6 +10,13 @@ import { DocumentQuery } from "./utils";
  * When a namespace element duplicates the functionality of an element defined in RSS, the core element should be used.
  */
 export type RssFeed = {
+  /**
+   * Additional data
+   */
+  extensions?: {
+    imageUrl: string | undefined;
+  };
+
   title: string | undefined;
   /** The URL to the HTML website corresponding to the channel.*/
   link: string | undefined;
@@ -63,6 +71,9 @@ export type RssFeed = {
     "trackback:about": string | undefined;
     /** The ping element, when present in an item, identifies the item's trackback URL */
     "trackback:ping": string | undefined;
+    "dc:creator": string | undefined;
+    /** Tries to optimistically find image url from multiple elements */
+    "extensions:imageUrl": string | undefined;
   }>;
 
   /** The language the channel is written in. This allows aggregators to group all Italian language sites, for example, on a single page. A list of allowable values for this element, as provided by Netscape, is here. You may also use values defined by the W3C.	en-us */
@@ -234,6 +245,7 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
               pubDate: htmlVal(">pubDate"),
               comments: htmlVal(">comments"),
               "creativeCommons:license": htmlVal(">creativeCommons\\:license"),
+              "dc:creator": htmlVal(">dc\\:creator"),
               categories: [
                 {
                   selector: ">category",
@@ -293,6 +305,23 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
                   return elQuery.text() || elQuery.attr("rdf:resource");
                 },
               },
+
+              "extensions:imageUrl": {
+                selector:
+                  "enclosure[type*='image'],media\\:content[medium*='image'],content\\:encoded",
+                value(el) {
+                  const elQuery = query(el);
+
+                  switch (el.tagName) {
+                    case "enclosure":
+                    case "media:content":
+                      return elQuery.attr("url");
+                    case "content:encoded":
+                    case "description":
+                      return load(elQuery.text())("img").attr("src");
+                  }
+                },
+              },
             },
           },
         ],
@@ -300,9 +329,26 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
     },
   });
 
-  if (parsed.channel) {
-    return ok(parsed.channel);
-  } else {
+  if (!parsed.channel) {
     return err(null);
   }
+
+  return ok(parsed.channel);
+}
+
+export async function getFeedExtansions(feed: RssFeed) {
+  const pageLink = toUrl(feed.link || feed["atom:link"]?.href);
+
+  let channelImageUrl: string | undefined;
+
+  if (pageLink.isOk()) {
+    const pageQuery = await getDocumentQueryFromUrl(pageLink.value);
+    if (pageQuery.isOk()) {
+      channelImageUrl = pageQuery
+        .value(`meta[property$="image"], meta[name$="image"]`)
+        .attr("content");
+    }
+  }
+
+  return { channelImage: channelImageUrl };
 }
