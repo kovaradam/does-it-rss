@@ -11,6 +11,7 @@ import {
   ERRORS,
 } from "./utils";
 import { err, ok, Result } from "neverthrow";
+import * as v from "valibot";
 
 export type DefinitionResult = {
   feedXml: string;
@@ -18,7 +19,32 @@ export type DefinitionResult = {
   url: URL;
 };
 
-export type DefinitionResultDto = Omit<DefinitionResult, "feedXml">;
+export const ChannelsResponseSchema = v.array(
+  v.object({
+    content: v.object({
+      title: v.string(),
+      description: v.optional(v.string()),
+    }),
+    url: v.string(),
+  }),
+);
+
+export type ChannelsResponse = v.InferOutput<typeof ChannelsResponseSchema>;
+
+export async function getChannelsFromUrlPublic(
+  url: URL,
+  signal: AbortSignal,
+): Promise<ChannelsResponse> {
+  const result = await getChannelsFromUrl(url, signal)
+    .then((channels) => channels.unwrapOr([]) ?? [])
+    .then((channels) =>
+      channels.map((channel) => ({
+        url: channel.url.href,
+        content: channel.content,
+      })),
+    );
+  return result;
+}
 
 export async function getChannelsFromUrl(
   url: URL,

@@ -1,9 +1,9 @@
-import { DefinitionResultDto } from "./parse-feeds";
+import { ChannelsResponse } from "./parse-feeds";
 
 export async function Page(props: {
   result: {
     urlParam: string;
-    feeds: DefinitionResultDto[];
+    feeds: ChannelsResponse;
   } | null;
 }) {
   return (
@@ -22,7 +22,7 @@ export async function Page(props: {
                 <li>
                   <dl>
                     <dt>link</dt>
-                    <dd>{item.url.href}</dd>
+                    <dd>{item.url}</dd>
                   </dl>
                   <dl>
                     <dt>title</dt>

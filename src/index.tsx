@@ -1,36 +1,31 @@
 import { Hono } from "hono";
 import { renderer } from "./renderer";
-import { getChannelsFromUrl } from "./parse-feeds";
+import {
+  ChannelsResponseSchema,
+  getChannelsFromUrlPublic,
+} from "./parse-feeds";
 import { Page } from "./ui";
 import {
   fetchChannel,
   getDocumentQuery,
   getIsRssChannel,
-  timed,
   toUrl,
 } from "./utils";
 import {
   getFeedExtensions,
   getHash,
   parseFeedToJson,
+  RssFeedSchema,
 } from "./parse-feed-to-json";
 import { logger } from "hono/logger";
+import { toJsonSchema } from "@valibot/to-json-schema";
 
 const app = new Hono();
 
 app.use(renderer);
 app.use(logger());
-async function getChannelsFromUrlPublic(url: URL, signal: AbortSignal) {
-  const result = await getChannelsFromUrl(url, signal)
-    .then((channels) => channels.unwrapOr([]) ?? [])
-    .then((channels) =>
-      channels.map((channel) => ({
-        url: channel.url,
-        content: channel.content,
-      })),
-    );
-  return result;
-}
+
+app.notFound((c) => c.json({ message: "Not Found", ok: false }, 404));
 
 app.get("/", async (c) => {
   const urlParam = c.req.query("feed");
@@ -64,6 +59,10 @@ app.get("/json", async (c) => {
   );
 
   return c.json({ feeds });
+});
+
+app.get("/json/__schema", async (c) => {
+  return c.json({ schema: toJsonSchema(ChannelsResponseSchema) });
 });
 
 app.get("/json-feed", async (c) => {
@@ -104,6 +103,10 @@ app.get("/json-feed", async (c) => {
       },
     },
   );
+});
+
+app.get("json-feed/__schema", (c) => {
+  return c.json({ schema: toJsonSchema(RssFeedSchema) });
 });
 
 export default app;
