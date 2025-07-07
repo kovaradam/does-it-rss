@@ -9,23 +9,26 @@ import {
   timed,
   toUrl,
 } from "./utils";
-import { getFeedExtansions, parseFeedToJson } from "./parse-feed-to-json";
+import {
+  getFeedExtensions,
+  getHash,
+  parseFeedToJson,
+} from "./parse-feed-to-json";
+import { logger } from "hono/logger";
 
 const app = new Hono();
 
 app.use(renderer);
-
+app.use(logger());
 async function getChannelsFromUrlPublic(url: URL, signal: AbortSignal) {
-  const result = await timed(url.href, () =>
-    getChannelsFromUrl(url, signal)
-      .then((channels) => channels.unwrapOr([]) ?? [])
-      .then((channels) =>
-        channels.map((channel) => ({
-          url: channel.url,
-          content: channel.content,
-        })),
-      ),
-  );
+  const result = await getChannelsFromUrl(url, signal)
+    .then((channels) => channels.unwrapOr([]) ?? [])
+    .then((channels) =>
+      channels.map((channel) => ({
+        url: channel.url,
+        content: channel.content,
+      })),
+    );
   return result;
 }
 
@@ -89,10 +92,18 @@ app.get("/json-feed", async (c) => {
 
   const extensions =
     c.req.query("extensions") !== "false"
-      ? await getFeedExtansions(parsed.value)
+      ? await getFeedExtensions(parsed.value)
       : undefined;
 
-  return c.json({ feed: parsed.value, extensions });
+  return c.json(
+    { feed: parsed.value, extensions },
+    {
+      headers: {
+        "x-last-build-date": parsed.value.lastBuildDate ?? "",
+        "x-feed-hash": await getHash(parsed.value),
+      },
+    },
+  );
 });
 
 export default app;

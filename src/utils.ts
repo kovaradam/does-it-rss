@@ -96,9 +96,9 @@ export function timer(span: unknown) {
   };
 }
 
-export async function timed<T>(span: unknown, op: () => Promise<T>) {
+export async function timed<T>(span: unknown, op: Promise<T>) {
   const t = timer(span);
-  const result = await op();
+  const result = await op;
   t();
   return result;
 }

@@ -336,7 +336,7 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
   return ok(parsed.channel);
 }
 
-export async function getFeedExtansions(feed: RssFeed) {
+export async function getFeedExtensions(feed: RssFeed) {
   const pageLink = toUrl(feed.link || feed["atom:link"]?.href);
 
   let channelImageUrl: string | undefined;
@@ -351,4 +351,16 @@ export async function getFeedExtansions(feed: RssFeed) {
   }
 
   return { channelImage: channelImageUrl };
+}
+
+export async function getHash(feed: RssFeed) {
+  const source = `${feed.lastBuildDate}${feed.items.map((i) => i.guid || i.link || i.title).join("")}`;
+  const digest = await crypto.subtle.digest(
+    { name: "sha-256" },
+    new TextEncoder().encode(source),
+  );
+
+  return [...new Uint8Array(digest)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
