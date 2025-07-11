@@ -62,7 +62,7 @@ app.get("/json", async (c) => {
 });
 
 app.get("/json/__schema", async (c) => {
-  return c.json({ schema: toJsonSchema(ChannelsResponseSchema) });
+  return c.json(toJsonSchema(ChannelsResponseSchema));
 });
 
 app.get("/json-feed", async (c) => {
@@ -106,7 +106,7 @@ app.get("/json-feed", async (c) => {
 });
 
 app.get("json-feed/__schema", (c) => {
-  return c.json({ schema: toJsonSchema(RssFeedSchema) });
+  return c.json(toJsonSchema(RssFeedSchema));
 });
 
 export default app;
