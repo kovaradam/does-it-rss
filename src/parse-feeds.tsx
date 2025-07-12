@@ -19,22 +19,26 @@ export type DefinitionResult = {
   url: URL;
 };
 
-export const ChannelsResponseSchema = v.array(
-  v.object({
-    content: v.object({
-      title: v.string(),
-      description: v.optional(v.string()),
+export const RssFeedListResponseSchema = v.object({
+  feeds: v.array(
+    v.object({
+      content: v.object({
+        title: v.string(),
+        description: v.optional(v.string()),
+      }),
+      url: v.string(),
     }),
-    url: v.string(),
-  }),
-);
+  ),
+});
 
-export type ChannelsResponse = v.InferOutput<typeof ChannelsResponseSchema>;
+export type RssFeedListResponseSchemaType = v.InferOutput<
+  typeof RssFeedListResponseSchema
+>;
 
 export async function getChannelsFromUrlPublic(
   url: URL,
   signal: AbortSignal,
-): Promise<ChannelsResponse> {
+): Promise<RssFeedListResponseSchemaType> {
   const result = await getChannelsFromUrl(url, signal)
     .then((channels) => channels.unwrapOr([]) ?? [])
     .then((channels) =>
@@ -43,7 +47,7 @@ export async function getChannelsFromUrlPublic(
         content: channel.content,
       })),
     );
-  return result;
+  return { feeds: result };
 }
 
 export async function getChannelsFromUrl(

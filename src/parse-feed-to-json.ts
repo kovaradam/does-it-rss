@@ -21,6 +21,8 @@ const RssItemSchema = v.object({
 
   /**Indicates when the item was published. */
   pubDate: v.optional(v.string()),
+  /**Indicates when the item was published. */
+  updated: v.optional(v.string()),
   /**A string that uniquely identifies the item. */
   guid: v.optional(
     v.object({
@@ -69,7 +71,9 @@ export const RssFeedSchema = v.object({
     }),
   ),
 
+  rssVersion: v.optional(v.string()),
   title: v.optional(v.string()),
+  subtitle: v.optional(v.string()),
   /** The URL to the HTML website corresponding to the channel.*/
   link: v.optional(v.string()),
   description: v.optional(v.string()),
@@ -132,7 +136,7 @@ export const RssFeedSchema = v.object({
       registerProcedure: v.optional(v.string()),
     }),
   ),
-  /**	ttl stands for time to live. It's a number of minutes that indicates how long a channel can be cached before refreshing from the source. More info here.*/
+  /**	ttl stands for time to live. It's a number of minutes that indicates how long a channel can be cached before refreshing from the source. */
   ttl: v.optional(v.string()),
   /** Specifies a GIF, JPEG or PNG image that can be displayed with the channel */
   image: v.optional(
@@ -178,12 +182,25 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
   });
 
   const parsed = query.extract({
+    rssVersion: {
+      selector: "rss",
+      value(el) {
+        return query(el).attr("version");
+      },
+    },
     channel: {
-      selector: "channel",
+      selector: "channel,feed",
       value: {
         description: htmlVal(">description"),
         title: htmlVal(">title"),
-        link: htmlVal(">link"),
+        subtitle: htmlVal(">subtitle"),
+        link: {
+          selector: ">link",
+          value(el) {
+            const elQuery = query(el);
+            return elQuery.html() || elQuery.attr("href");
+          },
+        },
         "content:encoded": htmlVal(">content\\:encoded"),
         "creativeCommons:license": htmlVal(">creativeCommons\\:license"),
         "atom:link": {
@@ -202,11 +219,11 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
           },
         },
         language: htmlVal(">language"),
-        copyright: htmlVal(">copyright"),
+        copyright: htmlVal(">copyright,>rights"),
         managingEditor: htmlVal(">managingEditor"),
         webMaster: htmlVal(">webMaster"),
         pubDate: htmlVal(">pubDate"),
-        lastBuildDate: htmlVal(">lastBuildDate"),
+        lastBuildDate: htmlVal(">lastBuildDate,>updated"),
         categories: [
           {
             selector: ">category",
@@ -261,13 +278,22 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
 
         items: [
           {
-            selector: ">item",
+            selector: ">item,>entry",
             value: {
               title: htmlVal(">title"),
-              description: htmlVal(">description"),
-              link: htmlVal(">link"),
+              description: htmlVal(
+                ">description,>content,>summary,>content\\:encoded",
+              ),
+              link: {
+                selector: ">link",
+                value(el) {
+                  const elQuery = query(el);
+                  return elQuery.html() || elQuery.attr("href");
+                },
+              },
               author: htmlVal(">author"),
-              pubDate: htmlVal(">pubDate"),
+              pubDate: htmlVal(">pubDate,>published"),
+              updated: htmlVal(">updated"),
               comments: htmlVal(">comments"),
               "creativeCommons:license": htmlVal(">creativeCommons\\:license"),
               "dc:creator": htmlVal(">dc\\:creator"),
@@ -277,7 +303,8 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
                   value(el) {
                     const elQuery = query(el);
                     return {
-                      value: elQuery.html() ?? undefined,
+                      value:
+                        (elQuery.html() || elQuery.attr("term")) ?? undefined,
                       domain: elQuery.attr("domain"),
                     };
                   },
@@ -295,11 +322,11 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
                 },
               },
               enclosure: {
-                selector: ">enclosure",
+                selector: ">enclosure,>link[rel='enclosure']",
                 value(el) {
                   const elQuery = query(el);
                   return {
-                    url: elQuery.attr("url"),
+                    url: elQuery.attr("url") || elQuery.attr("href"),
                     length: elQuery.attr("length"),
                     type: elQuery.attr("type"),
                   };
@@ -342,8 +369,10 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
                     case "media:content":
                       return elQuery.attr("url");
                     case "content:encoded":
-                    case "description":
-                      return load(elQuery.text())("img").attr("src");
+                    case "description": {
+                      const textQuery = load(elQuery.text());
+                      return textQuery("img").attr("src");
+                    }
                   }
                 },
               },
@@ -355,22 +384,30 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
   });
 
   if (parsed.channel) {
+    Object.assign(parsed.channel, { rssVersion: parsed.rssVersion });
     return ok(parsed.channel);
   } else {
     return err(null);
   }
 }
 
-export async function getFeedExtensions(feed: RssFeed) {
-  const pageLink = toUrl(feed.link || feed["atom:link"]?.href);
+export async function getFeedExtensions(
+  feed: RssFeed,
+  feedUrl: URL,
+  signal: AbortSignal,
+) {
+  const pageLink = toUrl(
+    feed.link || feed["atom:link"]?.href || feedUrl.origin,
+  );
 
   let channelImageUrl: string | undefined;
 
   if (pageLink.isOk()) {
-    const pageQuery = await getDocumentQueryFromUrl(pageLink.value);
+    const pageQuery = await getDocumentQueryFromUrl(pageLink.value, signal);
+
     if (pageQuery.isOk()) {
       channelImageUrl = pageQuery
-        .value(`meta[property$="image"], meta[name$="image"]`)
+        .value(`meta[property$="image"],meta[name$="image"]`)
         .attr("content");
     }
   }

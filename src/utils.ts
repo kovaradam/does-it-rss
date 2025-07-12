@@ -43,9 +43,11 @@ export function getDocumentQuery(input: string) {
   return load(input, parserOptions, false);
 }
 
-export async function getDocumentQueryFromUrl(input: URL) {
+export async function getDocumentQueryFromUrl(input: URL, signal: AbortSignal) {
   return fromPromise(
-    fetch(input).then(async (r) => getDocumentQuery(await r.text())),
+    fetchDocument(input, {
+      signal,
+    }).then(async (r) => getDocumentQuery(await r.text())),
     (e) => {
       console.error(e);
       err(e);
@@ -61,7 +63,9 @@ export function getIsRssChannel(query: DocumentQuery) {
 
 export async function fetchChannel(url: URL, signal: AbortSignal) {
   const result = await ResultAsync.fromPromise(
-    fetch(url, { signal: signal }).then((r) => {
+    fetchDocument(url, {
+      signal: signal,
+    }).then((r) => {
       if (!r.ok) {
         throw "";
       }
@@ -73,6 +77,17 @@ export async function fetchChannel(url: URL, signal: AbortSignal) {
     },
   );
   return result;
+}
+
+async function fetchDocument(url: URL, init: RequestInit) {
+  return fetch(url, {
+    ...init,
+    headers: {
+      ...init?.headers,
+      // Some services don't like node
+      "user-agent": "curl",
+    },
+  });
 }
 
 export const ERRORS = enumerate(["no-links", "invalid-url", "max-depth"]);

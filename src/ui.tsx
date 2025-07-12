@@ -1,15 +1,15 @@
-import { ChannelsResponse } from "./parse-feeds";
+import { RssFeedListResponseSchemaType } from "./parse-feeds";
 
 export async function Page(props: {
   result: {
     urlParam: string;
-    feeds: ChannelsResponse;
+    feeds: RssFeedListResponseSchemaType["feeds"];
   } | null;
 }) {
   return (
     <body>
       <form>
-        <input name="feed" type="url" />
+        <input name="feed" type="url" value={props.result?.urlParam} />
         <button type="submit" name="client" value="ui">
           find
         </button>
@@ -23,12 +23,11 @@ export async function Page(props: {
                   <dl>
                     <dt>link</dt>
                     <dd>{item.url}</dd>
-                  </dl>
-                  <dl>
+                    <dd>
+                      <a href={`/json-feed?feed=${item.url}`}>json</a>
+                    </dd>
                     <dt>title</dt>
                     <dd>{item.content.title}</dd>
-                  </dl>
-                  <dl>
                     <dt>description</dt>
                     <dd>{item.content.description}</dd>
                   </dl>

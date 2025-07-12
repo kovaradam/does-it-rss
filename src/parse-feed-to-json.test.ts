@@ -16,6 +16,7 @@ test("Correctly parses sample feed", () => {
     "Current headlines from the Dallas Times-Herald newspaper",
   );
 
+  expect(parsed.rssVersion).toBe("2.0");
   expect(parsed.link).toBe("https://dallas.example.com");
   expect(parsed.title).toBe("Dallas Times-Herald");
   expect(parsed.language).toBe("epo");
@@ -191,7 +192,7 @@ const SAMPLE_FEED = `
         <description>I'm headed for France. I wasn't gonna go this year, but then last week "Valley Girl" came out and I said to myself, Joe Bob, you gotta get out of the country for a while.</description>
         <enclosure length="24986239" type="audio/mpeg" url="https://dallas.example.com/joebob_050689.mp3" />
         <guid>https://dallas.example.com/1983/05/06/joebob.htm</guid>
-        <link>https://dallas.example.com/1983/05/06/joebob.htm</link>
+        <link href="https://dallas.example.com/1983/05/06/joebob.htm"></link>
         <pubDate>Fri, 06 May 1983 09:00:00 CST</pubDate>
         <source url="https://la.example.com/rss.xml">Los Angeles Herald-Examiner</source>
         <title>Joe Bob Goes to the Drive-In</title>
@@ -269,4 +270,77 @@ const FEED_NAMESPACES = `
       </item>
     </channel>
   </rss>
+  `;
+
+test("handles atom feed", () => {
+  const result = parseFeedToJson(getDocumentQuery(FEED_ATOM));
+
+  if (result.isErr()) {
+    expect(false).toBe(true);
+    return;
+  }
+
+  const parsed = result.value;
+
+  expect(parsed.title).toBe("dive into mark");
+  expect(parsed.subtitle).toBe(
+    "A &lt;em&gt;lot&lt;/em&gt; of effort went into making this effortless",
+  );
+  expect(parsed.lastBuildDate).toBe("2005-07-31T12:29:29Z");
+  expect(parsed.link).toBe("http://example.org/");
+  expect(parsed.copyright).toBe("Copyright (c) 2003, Mark Pilgrim");
+  expect(parsed.generator).toBe("Example Toolkit");
+
+  expect(parsed.items?.[0]?.title).toBe("Atom draft-07 snapshot");
+  expect(parsed.items?.[0]?.link).toBe("http://example.org/2005/04/02/atom");
+  expect(parsed.items?.[0]?.pubDate).toBe("2003-12-13T08:29:29-04:00");
+  expect(parsed.items?.[0]?.updated).toBe("2005-07-31T12:29:29Z");
+  expect(parsed.items?.[0]?.enclosure?.type).toBe("audio/mpeg");
+  expect(parsed.items?.[0]?.enclosure?.length).toBe("1337");
+  expect(parsed.items?.[0]?.enclosure?.url).toBe(
+    "http://example.org/audio/ph34r_my_podcast.mp3",
+  );
+});
+
+const FEED_ATOM = `
+  <?xml version="1.0" encoding="utf-8"?>
+  <feed xmlns="http://www.w3.org/2005/Atom">
+    <title type="text">dive into mark</title>
+    <subtitle type="html">A &lt;em&gt;lot&lt;/em&gt; of effort went into making this effortless</subtitle>
+    <updated>2005-07-31T12:29:29Z</updated>
+    <id>tag:example.org,2003:3</id>
+    <link rel="alternate" type="text/html"
+     hreflang="en" href="http://example.org/"/>
+    <link rel="self" type="application/atom+xml"
+     href="http://example.org/feed.atom"/>
+    <rights>Copyright (c) 2003, Mark Pilgrim</rights>
+    <generator uri="http://www.example.com/" version="1.0">Example Toolkit</generator>
+    <entry>
+      <title>Atom draft-07 snapshot</title>
+      <link rel="alternate" type="text/html"
+       href="http://example.org/2005/04/02/atom"/>
+      <link rel="enclosure" type="audio/mpeg" length="1337"
+       href="http://example.org/audio/ph34r_my_podcast.mp3"/>
+      <id>tag:example.org,2003:3.2397</id>
+      <updated>2005-07-31T12:29:29Z</updated>
+      <published>2003-12-13T08:29:29-04:00</published>
+      <author>
+        <name>Mark Pilgrim</name>
+        <uri>http://example.org/</uri>
+        <email>f8dy@example.com</email>
+      </author>
+      <contributor>
+        <name>Sam Ruby</name>
+      </contributor>
+      <contributor>
+        <name>Joe Gregorio</name>
+      </contributor>
+      <content type="xhtml" xml:lang="en"
+       xml:base="http://diveintomark.org/">
+        <div xmlns="http://www.w3.org/1999/xhtml">
+          <p><i>[Update: The Atom draft is finished.]</i></p>
+        </div>
+      </content>
+    </entry>
+  </feed>
   `;
