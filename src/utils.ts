@@ -14,14 +14,11 @@ export function booleanFilter<T>(input?: T | null): input is T {
 }
 
 export function normalizeHref(href: string) {
-  if (href.endsWith("/")) {
-    return normalizeHref(href.slice(0, -1));
+  const result = href.replace("www.", "");
+  if (result.endsWith("/")) {
+    return normalizeHref(result.slice(0, -1));
   }
-  return href;
-}
-
-export function hrefToCompare(href: string) {
-  return normalizeHref(href).replace("www.", "");
+  return result;
 }
 
 export function enumerate<T extends readonly string[]>(

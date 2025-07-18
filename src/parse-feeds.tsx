@@ -3,7 +3,6 @@ import {
   booleanFilter,
   filterUnique,
   getDocumentQuery,
-  hrefToCompare,
   getIsRssChannel,
   normalizeHref,
   DocumentQuery,
@@ -56,13 +55,13 @@ export async function getChannelsFromUrl(
   recursion = {
     level: 0,
     fetched: [] as string[],
-    parent: null as string | null,
+    parent: null as URL | null,
   },
 ): Promise<Result<DefinitionResult[] | null, keyof typeof ERRORS>> {
   const u = (linkUrl: string | URL) => new URL(linkUrl, url);
 
   const href = normalizeHref(url.href);
-  if (recursion.level === 3 || recursion.fetched.includes(href)) {
+  if (recursion.level === 4 || recursion.fetched.includes(href)) {
     return err(ERRORS["max-depth"]);
   }
 
@@ -82,13 +81,26 @@ export async function getChannelsFromUrl(
     return ok([
       {
         feedXml: response.value,
-        url: url,
+        url: u(url),
         content: getChannelMeta(query),
       },
     ]);
+  } else if (
+    recursion.parent &&
+    !url.hostname.includes(recursion.parent.hostname)
+  ) {
+    // do not continue going through files outside of (sub)domain
+    return ok([]);
   }
 
-  const links = parseLinksFromHtml(query);
+  const links = parseLinksFromHtml(query)
+    .map((link) => ({
+      url: u(normalizeHref(link.href)),
+    }))
+    .filter((l) =>
+      // check arbitrary section of hostname to assert _some_ level of similarity
+      l.url.hostname.includes(normalizeHref(url.hostname).slice(-5)),
+    );
 
   if (!links.length) {
     return err(ERRORS["no-links"]);
@@ -97,19 +109,19 @@ export async function getChannelsFromUrl(
   const nextRecursion = {
     ...recursion,
     level: recursion.level + 1,
-    parent: url.pathname,
+    parent: recursion.parent ?? url,
   };
 
   if (links.length === 1 && links[0]) {
-    return getChannelsFromUrl(u(links[0].href), abortSignal, nextRecursion);
+    return getChannelsFromUrl(links[0].url, abortSignal, nextRecursion);
   }
 
   const traversedLinks = (
     await Promise.allSettled(
       links
-        .filter((link) => link.href)
+        .filter((link) => link.url)
         .map(async (link) => {
-          return getChannelsFromUrl(u(link.href), abortSignal, nextRecursion);
+          return getChannelsFromUrl(link.url, abortSignal, nextRecursion);
         }),
     )
   )
@@ -118,9 +130,10 @@ export async function getChannelsFromUrl(
     .filter(booleanFilter)
     .filter(
       filterUnique(
-        (a, b) => hrefToCompare(a.url.href) === hrefToCompare(b.url.href),
+        (a, b) => normalizeHref(a.url.href) === normalizeHref(b.url.href),
       ),
     );
+
   return ok(traversedLinks);
 }
 
@@ -151,12 +164,14 @@ function parseLinksFromHtml(query: ReturnType<typeof getDocumentQuery>) {
   const links: Array<{ href: string }> = [];
 
   linkElements.each((_, e) => {
-    if (typeof e.attribs.href !== "string") {
+    const href = e.attribs.href;
+
+    if (typeof href !== "string") {
       return;
     }
 
     links.push({
-      href: e.attribs.href,
+      href: href,
     });
   });
 
