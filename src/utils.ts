@@ -1,5 +1,7 @@
 import { load } from "cheerio/slim";
 import { err, fromPromise, ok, ResultAsync } from "neverthrow";
+import { FetchOptions, ofetch } from "ofetch";
+import * as v from "valibot";
 
 export function filterUnique<T>(
   ...[equality]: T extends object ? [(a: T, b: T) => boolean] : []
@@ -44,7 +46,7 @@ export async function getDocumentQueryFromUrl(input: URL, signal: AbortSignal) {
   return fromPromise(
     fetchDocument(input, {
       signal,
-    }).then(async (r) => getDocumentQuery(await r.text())),
+    }).then(getDocumentQuery),
     (e) => {
       console.error(e);
       err(e);
@@ -62,11 +64,6 @@ export async function fetchChannel(url: URL, signal: AbortSignal) {
   const result = await ResultAsync.fromPromise(
     fetchDocument(url, {
       signal: signal,
-    }).then((r) => {
-      if (!r.ok) {
-        throw "";
-      }
-      return r.text();
     }),
     (_) => {
       console.error("error fetching channel", url.href, _);
@@ -76,22 +73,36 @@ export async function fetchChannel(url: URL, signal: AbortSignal) {
   return result;
 }
 
-async function fetchDocument(url: URL, init: RequestInit) {
-  return fetch(url, {
+async function fetchDocument(url: URL, init: FetchOptions) {
+  // Using ofetch because it retries failed requests
+  return ofetch(url.pathname, {
     ...init,
+    baseURL: url.origin,
     headers: {
       ...init?.headers,
       // Some services don't like node
       "user-agent": "curl",
     },
+    parseResponse: (txt) => txt,
   });
 }
 
 export const ERRORS = enumerate(["no-links", "invalid-url", "max-depth"]);
 
 export function toUrl(input: unknown) {
+  const withScheme = String(input).startsWith("http")
+    ? (input as string)
+    : typeof input === "string"
+      ? `https://${input}`
+      : input;
+
   try {
-    return ok(new URL(input as string));
+    const url = new URL(withScheme as string);
+    if (url.origin) {
+      return ok(url);
+    } else {
+      return err();
+    }
   } catch {
     return err();
   }

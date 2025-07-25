@@ -2,11 +2,11 @@ import { Hono } from "hono";
 import { renderer } from "./renderer";
 import {
   RssFeedListResponseSchema,
-  RssFeedListResponseSchemaType,
   getChannelsFromUrlPublic,
 } from "./parse-feeds";
 import { Page } from "./ui";
 import {
+  enumerate,
   fetchChannel,
   getDocumentQuery,
   getIsRssChannel,
@@ -16,23 +16,44 @@ import {
   getFeedExtensions,
   getHash,
   parseFeedToJson,
-  RssFeedSchema,
+  RssFeedResponseSchema,
 } from "./parse-feed-to-json";
 import { logger } from "hono/logger";
 import { toJsonSchema } from "@valibot/to-json-schema";
 import * as v from "valibot";
+import { cors } from "hono/cors";
+import { resolver, validator } from "hono-openapi/valibot";
+import { describeRoute, openAPISpecs } from "hono-openapi";
+import { prettyJSON } from "hono/pretty-json";
+import { swaggerUI } from "@hono/swagger-ui";
 
 const app = new Hono();
 
 app.use(renderer);
 app.use(logger());
+app.use(cors());
+app.use(prettyJSON());
 
 app.notFound((c) => c.json({ message: "Not Found", ok: false }, 404));
 
-app.get("/", async (c) => {
+export const routes = enumerate([
+  "/",
+  "/json",
+  "/json-feed",
+  "/__schema",
+  "/__openapi",
+  "/__openapi_ui",
+]);
+
+app.get(routes["/"], async (c) => {
   const urlParam = c.req.query("feed");
 
   const feedUrl = toUrl(urlParam);
+
+  c.res.headers.append(
+    "Link",
+    '<https://fonts.googleapis.com>; rel="preconnect"',
+  );
 
   return c.render(
     <Page
@@ -50,84 +71,149 @@ app.get("/", async (c) => {
             }
           : null
       }
+      context={c}
     />,
   );
 });
 
-app.get("/json", async (c) => {
-  const urlParam = toUrl(c.req.query("feed"));
-
-  if (urlParam.isErr()) {
-    return c.json({ error: "invalid url format" }, { status: 400 });
-  }
-
-  return c.json<RssFeedListResponseSchemaType>(
-    await getChannelsFromUrlPublic(urlParam.value, c.req.raw.signal),
-  );
-});
-
-app.get("/json-feed", async (c) => {
-  const feedUrl = toUrl(c.req.query("feed"));
-  if (feedUrl.isErr()) {
-    return c.json({ error: "invalid url format" }, { status: 400 });
-  }
-
-  const feedXml = await fetchChannel(feedUrl.value, c.req.raw.signal);
-
-  if (feedXml.isErr()) {
-    return c.json({ error: "failed to fetch from url" }, { status: 400 });
-  }
-
-  const query = getDocumentQuery(feedXml.value);
-
-  if (!getIsRssChannel(query)) {
-    return c.json({ error: "is not valid rss feed" }, { status: 400 });
-  }
-
-  const parsed = parseFeedToJson(query);
-
-  if (parsed.isErr()) {
-    return c.json({ error: "could not parse rss feed" }, { status: 400 });
-  }
-
-  const extensions =
-    c.req.query("extensions") !== "false"
-      ? await getFeedExtensions(parsed.value, feedUrl.value, c.req.raw.signal)
-      : undefined;
-  if (extensions) {
-    parsed.value.extensions = { imageUrl: extensions?.channelImage };
-  }
-
-  return c.json<RssFeedResponseSchemaType>(
-    { feed: parsed.value },
-    {
-      headers: {
-        "x-last-build-date": parsed.value.lastBuildDate ?? "",
-        "x-feed-hash": await getHash(parsed.value),
+app.get(
+  routes["/json"],
+  describeRoute({
+    description: "Get list of feeds found on given url",
+    responses: {
+      200: {
+        description: "Successful response",
+        content: {
+          "application/json": { schema: resolver(RssFeedListResponseSchema) },
+        },
+      },
+      400: {
+        description: "Invalid url format",
+        content: {
+          "application/json": {
+            schema: resolver(v.object({ error: v.string() })),
+          },
+        },
       },
     },
-  );
-});
+  }),
+  validator("query", v.object({ feed: v.string() })),
+  async (c) => {
+    const urlParam = toUrl(c.req.valid("query").feed);
 
-const RssFeedResponseSchema = v.object({
-  feed: RssFeedSchema,
-});
+    if (urlParam.isErr()) {
+      return c.json({ error: "invalid url format" }, { status: 400 });
+    }
 
-type RssFeedResponseSchemaType = v.InferOutput<typeof RssFeedResponseSchema>;
+    return c.json(
+      await getChannelsFromUrlPublic(urlParam.value, c.req.raw.signal),
+    );
+  },
+);
 
-const ApiSchema = v.object({
-  ["/json"]: v.object({
+app.get(
+  routes["/json-feed"],
+  describeRoute({
+    description: "Parse existing feed to json response",
+    responses: {
+      200: {
+        description: "Successful response",
+        content: {
+          "application/json": { schema: resolver(RssFeedResponseSchema) },
+        },
+      },
+      400: {
+        description: "Parse failed",
+        content: {
+          "application/json": {
+            schema: resolver(v.object({ error: v.string() })),
+          },
+        },
+      },
+    },
+  }),
+  validator("query", v.object({ feed: v.string() })),
+  async (c) => {
+    const feedUrl = toUrl(c.req.valid("query").feed);
+    if (feedUrl.isErr()) {
+      return c.json({ error: "invalid url format" }, { status: 400 });
+    }
+
+    const feedXml = await fetchChannel(feedUrl.value, c.req.raw.signal);
+
+    if (feedXml.isErr()) {
+      return c.json({ error: "failed to fetch from url" }, { status: 400 });
+    }
+
+    const query = getDocumentQuery(feedXml.value);
+
+    if (!getIsRssChannel(query)) {
+      return c.json({ error: "is not valid rss feed" }, { status: 400 });
+    }
+
+    const parsed = parseFeedToJson(query);
+
+    if (parsed.isErr()) {
+      return c.json({ error: "could not parse rss feed" }, { status: 400 });
+    }
+
+    const extensions =
+      c.req.query("extensions") !== "false"
+        ? await getFeedExtensions(parsed.value, feedUrl.value, c.req.raw.signal)
+        : undefined;
+    if (extensions) {
+      parsed.value.extensions = { imageUrl: extensions?.channelImage };
+    }
+
+    return c.json(
+      { feed: parsed.value },
+      {
+        headers: {
+          "x-last-build-date": parsed.value.lastBuildDate ?? "",
+          "x-feed-hash": await getHash(parsed.value),
+        },
+      },
+    );
+  },
+);
+
+app.get(
+  routes["/__openapi"],
+  openAPISpecs(app, {
+    documentation: {
+      info: {
+        title: "Does it RSS API",
+        version: "1.0.0",
+      },
+      servers: [
+        { url: "https://does-it-rss.com", description: "Main service" },
+      ].concat(
+        import.meta.env.DEV
+          ? {
+              url: `http://0.0.0.0:5173`,
+              description: "Local",
+            }
+          : [],
+      ),
+    },
+  }),
+);
+
+app.get(routes["/__openapi_ui"], swaggerUI({ url: routes["/__openapi"] }));
+
+const ApiJsonSchema = v.object({
+  [routes["/json"]]: v.object({
     response: RssFeedListResponseSchema,
     search: v.object({ feed: v.string() }),
   }),
-  ["/json-feed"]: v.object({
+  [routes["/json-feed"]]: v.object({
     response: RssFeedResponseSchema,
     search: v.object({ feed: v.string() }),
   }),
 });
 
-app.get("__schema", (c) => {
-  return c.json(toJsonSchema(ApiSchema));
+app.get(routes["/__schema"], (c) => {
+  return c.json(toJsonSchema(ApiJsonSchema));
 });
 
 export default app;

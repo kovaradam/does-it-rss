@@ -1,7 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "does-it-rss",
-  "compatibility_date": "2024-04-01",
+  "compatibility_date": "2024-09-23",
   "main": "./src/index.tsx",
   "observability": { "logs": { "enabled": true } },
+  "compatibility_flags": ["nodejs_compat"],
 }

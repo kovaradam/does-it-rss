@@ -426,3 +426,11 @@ export async function getHash(feed: RssFeed) {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
+
+export const RssFeedResponseSchema = v.object({
+  feed: RssFeedSchema,
+});
+
+export type RssFeedResponseSchemaType = v.InferOutput<
+  typeof RssFeedResponseSchema
+>;

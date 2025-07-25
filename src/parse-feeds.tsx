@@ -11,6 +11,8 @@ import {
 } from "./utils";
 import { err, ok, Result } from "neverthrow";
 import * as v from "valibot";
+import { routes } from ".";
+import { load } from "cheerio/slim";
 
 export type DefinitionResult = {
   feedXml: string;
@@ -26,6 +28,7 @@ export const RssFeedListResponseSchema = v.object({
         description: v.optional(v.string()),
       }),
       url: v.string(),
+      parseLink: v.string(),
     }),
   ),
 });
@@ -43,7 +46,13 @@ export async function getChannelsFromUrlPublic(
     .then((channels) =>
       channels.map((channel) => ({
         url: channel.url.href,
-        content: channel.content,
+        content: {
+          title: load(channel.content.title ?? "").text(),
+          description: load(channel.content.description ?? "").text(),
+        },
+        parseLink: routes["/json-feed"]
+          .concat(`?feed=`)
+          .concat(channel.url.href),
       })),
     );
   return { feeds: result };
