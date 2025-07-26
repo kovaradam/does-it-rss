@@ -148,13 +148,13 @@ export async function Page(props: {
           </div>
           <form
             class={
-              "flex flex-col items-center max-sm:fixed bottom-0 max-sm:bg-white w-screen sm:w-[60ch] max-w-screen max-sm:rounded-t-4xl"
+              "flex flex-col items-center w-screen sm:w-[60ch] max-w-[90vw] max-sm:rounded-t-4xl"
             }
             style={{ "view-transition-name": "live-area" }}
           >
             <div
               class={
-                "flex flex-col p-6 bg-white gap-2 w-full rounded-lg sm:shadow-[2px_2px_black]"
+                "flex flex-col p-6 bg-white gap-2 w-full rounded-lg shadow-[2px_2px_black]"
               }
             >
               <label htmlFor="feed" class={"font-bold"}>
