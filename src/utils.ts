@@ -1,7 +1,6 @@
 import { load } from "cheerio/slim";
 import { err, fromPromise, ok, ResultAsync } from "neverthrow";
 import { FetchOptions, ofetch } from "ofetch";
-import * as v from "valibot";
 
 export function filterUnique<T>(
   ...[equality]: T extends object ? [(a: T, b: T) => boolean] : []
