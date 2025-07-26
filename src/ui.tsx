@@ -167,7 +167,7 @@ export async function Page(props: {
                 name="feed"
                 id="feed"
                 value={props.result?.urlParam}
-                placeholder="https://some.web"
+                placeholder="https://npr.org"
                 autofocus={props.context.req.query("autofocus") === "feed"}
                 required
               />

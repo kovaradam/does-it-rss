@@ -5,7 +5,7 @@ import { routes } from ".";
 
 export const renderer = jsxRenderer(({ children }) => {
   return (
-    <html class={"h-full"}>
+    <html class={"h-full"} lang="en">
       <head>
         <ViteClient />
         <Link href="/src/style.css" rel="stylesheet" />
@@ -22,10 +22,17 @@ export const renderer = jsxRenderer(({ children }) => {
             "flex items-center justify-end text-lg p-4 gap-4 [&_a]:hover:underline underline-offset-2"
           }
         >
-          <a href={routes["/__openapi_ui"]} class={"font-bitcount-single"}>
+          <a
+            href={routes["/__openapi_ui"]}
+            class={"font-bitcount-single"}
+            aria-label="Open api specification"
+          >
             /api
           </a>
-          <a href={"https://github.com/kovaradam/does-it-rss"}>
+          <a
+            href={"https://github.com/kovaradam/does-it-rss"}
+            aria-label="Source on github"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
