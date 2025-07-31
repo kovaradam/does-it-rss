@@ -415,6 +415,10 @@ export async function getFeedExtensions(
   return { channelImage: channelImageUrl };
 }
 
+/**
+ * Create some form of fingerprint for the feed so that the consumer
+ * can decide whether they want to update.
+ */
 export async function getHash(feed: RssFeed) {
   const source = `${feed.lastBuildDate}${feed.items?.map((i) => i.guid || i.link || i.title).join("")}`;
   const digest = await crypto.subtle.digest(

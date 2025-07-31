@@ -1,3 +1,7 @@
+# Does it RSS?
+
+Get RSS feeds from a web page. Provides a [JSON API](https://does-it-rss.com/__openapi_ui) for apps to consume.
+
 ```txt
 npm install
 npm run dev

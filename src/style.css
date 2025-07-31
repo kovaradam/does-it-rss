@@ -11,12 +11,6 @@
   navigation: auto;
 }
 
-@keyframes blink {
-  0% {
-    opacity: 0;
-  }
-}
-
 .grain {
   overflow: hidden;
 

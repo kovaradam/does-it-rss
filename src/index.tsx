@@ -132,9 +132,13 @@ app.get(
       },
     },
   }),
-  validator("query", v.object({ feed: v.string() })),
+  validator(
+    "query",
+    v.object({ feed: v.string(), disableExtensions: v.optional(v.string()) }),
+  ),
   async (c) => {
-    const feedUrl = toUrl(c.req.valid("query").feed);
+    const queryParams = c.req.valid("query");
+    const feedUrl = toUrl(queryParams.feed);
     if (feedUrl.isErr()) {
       return c.json({ error: "invalid url format" }, { status: 400 });
     }
@@ -158,7 +162,7 @@ app.get(
     }
 
     const extensions =
-      c.req.query("extensions") !== "false"
+      queryParams.disableExtensions === undefined
         ? await getFeedExtensions(parsed.value, feedUrl.value, c.req.raw.signal)
         : undefined;
     if (extensions) {
@@ -169,6 +173,7 @@ app.get(
       { feed: parsed.value },
       {
         headers: {
+          // Provide feed info in headers so that consumer can avoid reading body of the response
           "x-last-build-date": parsed.value.lastBuildDate ?? "",
           "x-feed-hash": await getHash(parsed.value),
         },

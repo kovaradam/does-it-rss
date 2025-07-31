@@ -217,7 +217,7 @@ function SubmitButton(
   ) as unknown as HtmlEscapedString;
 }
 
-function ArrowRight(props: { class?: string }) {
+function ArrowRight(props: JSX.HTMLAttributes) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -228,6 +228,7 @@ function ArrowRight(props: { class?: string }) {
       stroke-linecap="round"
       stroke-linejoin="round"
       stroke-dasharray="1 2"
+      {...props}
       class={clsx(
         props.class,
         "lucide lucide-arrow-right-icon lucide-arrow-right",
