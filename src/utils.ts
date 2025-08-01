@@ -124,3 +124,17 @@ export async function timed<T>(span: unknown, op: Promise<T>) {
   t();
   return result;
 }
+
+export function asNumber(value: unknown) {
+  if (typeof value === "number") {
+    return value;
+  }
+
+  const parsed = Number(value);
+
+  if (!isNaN(parsed)) {
+    return parsed;
+  }
+
+  return null;
+}

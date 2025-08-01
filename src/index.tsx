@@ -6,6 +6,7 @@ import {
 } from "./parse-feeds";
 import { Page } from "./ui";
 import {
+  asNumber,
   enumerate,
   fetchChannel,
   getDocumentQuery,
@@ -169,13 +170,20 @@ app.get(
       parsed.value.extensions = { imageUrl: extensions?.channelImage };
     }
 
+    const ttl = asNumber(parsed.value.ttl);
+    const hash = await getHash(parsed.value);
+
     return c.json(
       { feed: parsed.value },
       {
         headers: {
           // Provide feed info in headers so that consumer can avoid reading body of the response
           "x-last-build-date": parsed.value.lastBuildDate ?? "",
-          "x-feed-hash": await getHash(parsed.value),
+          // todo: leave only etag?
+          "x-feed-hash": hash,
+
+          "cache-control": `public, max-age=${(ttl ?? 0) / 60}`,
+          etag: `W/"${hash}"`,
         },
       },
     );
