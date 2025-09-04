@@ -122,6 +122,20 @@ app.get(
         content: {
           "application/json": { schema: resolver(RssFeedResponseSchema) },
         },
+        headers: {
+          "x-last-build-date": {
+            description: "parsed last build date of the original feed",
+          },
+          "x-feed-hash": {
+            description:
+              "hash of the parsed feed produced from last build date and item data",
+          },
+
+          "cache-control": {
+            description: "cache control header derived from feed ttl ",
+          },
+          etag: { example: `W/"<x-feed-hash value>"` },
+        },
       },
       400: {
         description: "Parse failed",
@@ -130,6 +144,10 @@ app.get(
             schema: resolver(v.object({ error: v.string() })),
           },
         },
+      },
+      304: {
+        description:
+          "Conditional request response - caller has the latest version of the feed",
       },
     },
   }),
@@ -173,18 +191,24 @@ app.get(
     const ttl = asNumber(parsed.value.ttl);
     const hash = await getHash(parsed.value);
 
+    const responseHeaders = {
+      // Provide feed info in headers so that consumer can avoid reading body of the response
+      "x-last-build-date": parsed.value.lastBuildDate ?? "",
+      // todo: leave only etag?
+      "x-feed-hash": hash,
+
+      "cache-control": `public, max-age=${(ttl ?? 0) / 60}`,
+      etag: `W/"${hash}"`,
+    };
+
+    if (c.req.header("if-none-match") === responseHeaders.etag) {
+      return c.newResponse(null, 304, responseHeaders);
+    }
+
     return c.json(
       { feed: parsed.value },
       {
-        headers: {
-          // Provide feed info in headers so that consumer can avoid reading body of the response
-          "x-last-build-date": parsed.value.lastBuildDate ?? "",
-          // todo: leave only etag?
-          "x-feed-hash": hash,
-
-          "cache-control": `public, max-age=${(ttl ?? 0) / 60}`,
-          etag: `W/"${hash}"`,
-        },
+        headers: responseHeaders,
       },
     );
   },
