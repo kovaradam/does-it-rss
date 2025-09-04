@@ -134,7 +134,7 @@ app.get(
           "cache-control": {
             description: "cache control header derived from feed ttl ",
           },
-          etag: { example: `W/"<x-feed-hash value>"` },
+          etag: { description: `W/"<x-feed-hash value>"` },
         },
       },
       400: {
@@ -147,7 +147,7 @@ app.get(
       },
       304: {
         description:
-          "Conditional request response - caller has the latest version of the feed",
+          'Conditional request response - caller has the latest version of the feed and provided its etag in "if-none-match" header',
       },
     },
   }),
@@ -196,7 +196,6 @@ app.get(
       "x-last-build-date": parsed.value.lastBuildDate ?? "",
       // todo: leave only etag?
       "x-feed-hash": hash,
-
       "cache-control": `public, max-age=${(ttl ?? 0) / 60}`,
       etag: `W/"${hash}"`,
     };
