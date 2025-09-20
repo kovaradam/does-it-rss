@@ -13,6 +13,7 @@ import { err, ok, Result } from "neverthrow";
 import * as v from "valibot";
 import { routes } from ".";
 import { load } from "cheerio/slim";
+import { getIsOpmlFile, parseFeedsFromOpml } from "./parse-feeds-from-opml";
 
 export type DefinitionResult = {
   feedXml: string;
@@ -85,6 +86,12 @@ export async function getChannelsFromUrl(
   const query = getDocumentQuery(response.value);
 
   const isRssChannelFile = getIsRssChannel(query);
+
+  const isOpmlFile = getIsOpmlFile(query);
+
+  if (isOpmlFile) {
+    return ok(parseFeedsFromOpml(query));
+  }
 
   if (isRssChannelFile) {
     return ok([
