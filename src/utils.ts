@@ -74,7 +74,7 @@ export async function fetchChannel(url: URL, signal: AbortSignal) {
 
 async function fetchDocument(url: URL, init: FetchOptions) {
   // Using ofetch because it retries failed requests
-  return ofetch(url.pathname, {
+  return ofetch(url.href, {
     ...init,
     baseURL: url.origin,
     headers: {

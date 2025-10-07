@@ -360,11 +360,13 @@ export function parseFeedToJson(query: DocumentQuery): Result<RssFeed, null> {
 
               "extensions:imageUrl": {
                 selector:
-                  "enclosure[type*='image'],media\\:content[medium*='image'],content\\:encoded",
+                  "enclosure[type*='image'],media\\:content[medium*='image'],content\\:encoded,itunes\\:image",
                 value(el) {
                   const elQuery = query(el);
 
                   switch (el.tagName) {
+                    case "itunes:image":
+                      return elQuery.attr("href");
                     case "enclosure":
                     case "media:content":
                       return elQuery.attr("url");
