@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { jsxRenderer } from "hono/jsx-renderer";
 import { Link, ViteClient } from "vite-ssr-components/hono";
-import { routes } from ".";
+import { routes } from "./routes";
 
 export const renderer = jsxRenderer(({ children }) => {
   return (
@@ -11,12 +11,13 @@ export const renderer = jsxRenderer(({ children }) => {
         <Link href="/src/style.css" rel="stylesheet" />
         <title>Does it RSS?</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="color-scheme" content="light dark" />
         <meta
           name="description"
           content="Find out what RSS feeds a website provides and parse them to JSON"
         />
       </head>
-      <body class={clsx("h-svh")}>
+      <body class={clsx("h-svh bg-background text-foreground")}>
         <header
           class={
             "flex items-center justify-end text-lg p-4 gap-4 [&_a]:hover:underline underline-offset-2"
@@ -49,16 +50,6 @@ export const renderer = jsxRenderer(({ children }) => {
           </a>
         </header>
         {children}
-        <div
-          class={
-            " bg-white opacity-25 w-[150vw] h-[150vw] fixed -z-10 rounded-full left-[30vw] top-[50svh]"
-          }
-        />
-        <div
-          class={
-            "grain bg-emerald-500 top-0 w-[200vw] h-[200vw] block fixed -z-20 rounded-full -translate-x-1/2 "
-          }
-        />
       </body>
     </html>
   );

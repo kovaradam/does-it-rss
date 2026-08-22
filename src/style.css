@@ -5,27 +5,32 @@
   --font-bitcount: "Bitcount", system-ui;
   --font-bitcount-single: "Bitcount Single", system-ui;
   --font-old-standard: "Old Standard TT", serif;
+
+  --color-muted-foreground: var(--color-slate-500);
+  --color-foreground: var(--color-slate-900);
+  --color-background: var(--color-slate-50);
+  --color-primary: var(--color-slate-800);
+  --color-accent: var(--color-orange-300);
+}
+
+:root {
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-muted-foreground: var(--color-gray-400);
+    --color-foreground: var(--color-slate-200);
+    --color-background: #0e0e10;
+    --color-primary: var(--color-slate-300);
+    --color-accent: var(--color-orange-300);
+  }
+}
+
+a {
+  @apply underline-offset-4;
 }
 
 @view-transition {
   navigation: auto;
-}
-
-.grain {
-  overflow: hidden;
-
-  &::after {
-    inset: 0;
-    content: "";
-    background-color: transparent;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'%3E%3Cfilter id='a'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23a)'/%3E%3C/svg%3E");
-    background-repeat: repeat;
-    background-size: 182px;
-    opacity: 0.52;
-    top: 0;
-    left: 0;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-  }
 }

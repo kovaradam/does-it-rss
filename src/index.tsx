@@ -7,7 +7,6 @@ import {
 import { Page } from "./ui";
 import {
   asNumber,
-  enumerate,
   fetchChannel,
   getDocumentQuery,
   getIsRssChannel,
@@ -27,6 +26,7 @@ import { resolver, validator } from "hono-openapi/valibot";
 import { describeRoute, openAPISpecs } from "hono-openapi";
 import { prettyJSON } from "hono/pretty-json";
 import { swaggerUI } from "@hono/swagger-ui";
+import { routes } from "./routes";
 
 const app = new Hono();
 
@@ -36,15 +36,6 @@ app.use(cors());
 app.use(prettyJSON());
 
 app.notFound((c) => c.json({ message: "Not Found", ok: false }, 404));
-
-export const routes = enumerate([
-  "/",
-  "/json",
-  "/json-feed",
-  "/__schema",
-  "/__openapi",
-  "/__openapi_ui",
-]);
 
 app.get(routes["/"], async (c) => {
   const urlParam = c.req.query("feed");

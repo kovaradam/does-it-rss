@@ -12,24 +12,19 @@ export async function Page(props: {
   } | null;
   context: Context;
 }) {
-  const hostname = toUrl(props.result?.urlParam)?.match(
-    (url) => url.hostname,
+  const resultUrl = toUrl(props.result?.urlParam)?.match(
+    (url) => url,
     () => null,
   );
+
   const heading = (
     <h1
-      class={"font-serif wrap-normal "}
+      class={"wrap-normal tracking-wide"}
       style={{ "view-transition-name": "header" }}
     >
-      <span class={"italic font-old-standard"}>
-        Does{" "}
-        <span style={{ "view-transition-name": "hostname" }}>
-          {hostname ?? "it"}
-        </span>{" "}
-      </span>
-
+      <span>Does it</span>{" "}
       <span class={"text-nowrap"}>
-        <span class={"font-bitcount"}>RSS</span>?
+        <span class={"font-bitcount font-light"}>RSS</span>?
       </span>
     </h1>
   );
@@ -37,113 +32,95 @@ export async function Page(props: {
   const feedCount = props.result?.feeds?.length;
 
   return (
-    <main class="flex items-center flex-col px-8">
+    <main class={"flex items-center flex-col px-4"}>
       {props.result?.urlParam ? (
-        <>
-          <div class={"mt-[25svh] mb-8 sm:mb-16 text-5xl md:text-5xl"}>
-            {heading}
-          </div>
-          {typeof feedCount === "number" && (
-            <div class={"mb-8 sm:mb-16 text-1xl "}>
-              {feedCount === 0 && (
-                <p>
-                  There were no feeds found on provided{" "}
-                  <a
-                    href={toUrl(props.result.urlParam).match(
-                      (t) => t.href,
-                      () => "",
-                    )}
-                    class={"underline underline-offset-2"}
-                  >
-                    address
-                  </a>
-                </p>
-              )}
-              {feedCount > 0 && (
-                <p>
-                  It sure does, there{" "}
-                  {feedCount > 1 ? (
-                    <> were {feedCount} feeds</>
-                  ) : (
-                    <>was one feed</>
-                  )}{" "}
-                  found on provided{" "}
-                  <a
-                    href={toUrl(props.result.urlParam).match(
-                      (t) => t.href,
-                      () => "",
-                    )}
-                    class={"underline underline-offset-2"}
-                  >
-                    address
-                  </a>
-                  :
-                </p>
-              )}
-            </div>
-          )}
-          <div class={"flex flex-col items-center"}>
+        <div class={"mt-[10svh]"}>
+          <a
+            type="submit"
+            value="ui"
+            class={
+              "items-center block border-b active:scale-97 w-fit mb-8 text-muted-foreground hover:border-transparent"
+            }
+            href="/?autofocus=feed"
+          >
+            <ArrowRight class="w-4 h-4 -scale-x-100 -translate-y-0.5 inline mr-0.5" />
+            Go to search
+          </a>
+          <div class={"text-5xl md:text-5xl"}>{heading}</div>
+          <h2 class={"text-muted-foreground"}>
+            {feedCount === 0
+              ? "No feeds were"
+              : feedCount === 1
+                ? "1 feed was"
+                : `${feedCount} feeds were`}{" "}
+            found on{" "}
+            <a
+              href={resultUrl?.href}
+              style={{ "view-transition-name": "hostname" }}
+              class={"break-all underline hover:no-underline"}
+            >
+              {resultUrl?.hostname ?? props.result?.urlParam ?? "it"}
+            </a>
+          </h2>
+
+          <div class={"mt-8 flex flex-col"}>
             <div class="mb-8" style={{ "view-transition-name": "live-area" }}>
-              {!!props.result?.feeds?.length ? (
-                <ul>
+              <>
+                <ul class={"divide-y divide-slate-300 dark:divide-slate-700"}>
                   {props.result.feeds.map((item) => (
-                    <li class="bg-white rounded-lg sm:shadow-[2px_2px_black] p-4 mb-4 w-[80ch] max-w-[90vw] relative">
+                    <li class="py-4 mb-4 w-[80ch] max-w-[90vw] relative">
                       <dl>
                         <dt class={"hidden"}>title</dt>
                         <dd class={"sm font-bold sm:max-w-2/3"}>
                           {item.content.title}
                         </dd>
+
                         <dt class={"hidden"}>link</dt>
-                        <dd class={"mb-2 sm:max-w-2/3"}>
-                          <a
-                            class={
-                              "text-slate-600 underline underline-offset-1 wrap-break-word"
-                            }
-                            href={item.url}
-                          >
-                            {item.url} <ArrowTopRight class="w-4 inline" />
-                          </a>
-                        </dd>
+                        <div
+                          class={
+                            "text-muted-foreground flex flex-wrap gap-x-1 sm:max-w-2/3 mb-1"
+                          }
+                        >
+                          <dt class={"hidden"}>json feed</dt>
+                          <dd>
+                            <a
+                              class={
+                                "underline hover:no-underline underline-offset-1 wrap-break-word"
+                              }
+                              href={`${item.parseLink}?pretty`}
+                            >
+                              JSON feed
+                            </a>
+                            ,
+                          </dd>
+
+                          <dd>
+                            <a
+                              class={
+                                "underline hover:no-underline underline-offset-1 wrap-break-word"
+                              }
+                              href={item.url}
+                            >
+                              {item.url} <ArrowTopRight class="w-4 inline" />
+                            </a>
+                          </dd>
+                        </div>
 
                         <dt class={"hidden"}>description</dt>
-                        <dd class={"italic"}>
+                        <dd>
                           {item.content.description || "Description not found"}
                         </dd>
                       </dl>
-
-                      <a
-                        href={`${item.parseLink}?pretty`}
-                        class={
-                          "max-sm:w-full max-sm:mt-2  text-center block sm:absolute sm:top-4 sm:right-4 p-1 px-2 font-bitcount-single border active:translate-x-[2px] active:translate-y-[2px] active:shadow-none! transition-transform"
-                        }
-                        style={{ boxShadow: "2px 2px black" }}
-                      >
-                        Parse to json
-                      </a>
                     </li>
                   ))}
                 </ul>
-              ) : (
-                <></>
-              )}
+              </>
             </div>
-            <SubmitButton
-              type="submit"
-              name="client"
-              value="ui"
-              class={
-                "group hover:border-b text-2xl  flex items-center-safe font-bitcount-single active:scale-95"
-              }
-              direction="left"
-              href="/?autofocus=feed"
-            >
-              Go Back
-            </SubmitButton>
           </div>
-        </>
+        </div>
       ) : (
         <>
-          <div class={"mt-[25svh] mb-16 sm:mb-32 text-7xl md:text-9xl"}>
+          <div class={"mt-[15svh] mb-16 text-7xl md:text-9xl font-thin"}>
             {heading}
           </div>
           <form
@@ -152,17 +129,13 @@ export async function Page(props: {
             }
             style={{ "view-transition-name": "live-area" }}
           >
-            <div
-              class={
-                "flex flex-col p-6 bg-white gap-2 w-full rounded-lg shadow-[2px_2px_black]"
-              }
-            >
-              <label htmlFor="feed" class={"font-bold"}>
+            <div class={"flex flex-col  gap-2 w-full "}>
+              <label htmlFor="feed" class={""}>
                 Web page address
               </label>
               <input
                 class={
-                  "border-b px-1 py-2 focus:bg-slate-100 valid:bg-slate-100"
+                  "border border-current/80 dark:border-current/60 rounded px-2 py-2 "
                 }
                 name="feed"
                 id="feed"
@@ -172,16 +145,8 @@ export async function Page(props: {
                 required
               />
             </div>
-            <div class={"py-2"}></div>
-            <SubmitButton
-              type="submit"
-              name="client"
-              class={
-                "group hover:border-b text-2xl m-2 flex items-center-safe font-bitcount-single active:scale-95"
-              }
-            >
-              Let's find out
-            </SubmitButton>
+            <div class={"py-4"}></div>
+            <SubmitButton type="submit">Check RSS feeds</SubmitButton>
           </form>
         </>
       )}
@@ -199,7 +164,7 @@ function SubmitButton(
     {
       ...props,
       class: clsx(
-        "group hover:border-current border-b border-transparent text-2xl m-2 flex items-center-safe font-bitcount-single active:scale-95",
+        "group hover:border-current bg-primary dark:bg-accent p-2 px-4 rounded text-background text-xl m-2 flex items-center-safe font-bitcount-single active:scale-97",
         props.class,
       ),
     },
@@ -210,7 +175,7 @@ function SubmitButton(
         )}
         <span class={"pt-1"}>{props.children}</span>
         {direction === "right" && (
-          <ArrowRight class="w-6 -ml-4 scale-0 group-hover:ml-0 group-hover:scale-100 transition-all" />
+          <ArrowRight class="w-6 -ml-5 scale-0 group-hover:ml-0 group-hover:scale-100 transition-all" />
         )}
       </>
     ) as string,
@@ -229,10 +194,7 @@ function ArrowRight(props: JSX.HTMLAttributes) {
       stroke-linejoin="round"
       stroke-dasharray="1 2"
       {...props}
-      class={clsx(
-        props.class,
-        "lucide lucide-arrow-right-icon lucide-arrow-right",
-      )}
+      class={clsx(props.class, "lucide")}
     >
       <path d="M5 12h14" />
       <path d="m12 5 7 7-7 7" />

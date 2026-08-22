@@ -11,9 +11,9 @@ import {
 } from "./utils";
 import { err, ok, Result } from "neverthrow";
 import * as v from "valibot";
-import { routes } from ".";
 import { load } from "cheerio/slim";
 import { getIsOpmlFile, parseFeedsFromOpml } from "./parse-feeds-from-opml";
+import { routes } from "./routes";
 
 export type DefinitionResult = {
   feedXml: string;
