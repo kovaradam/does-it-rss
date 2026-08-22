@@ -129,10 +129,13 @@ export async function Page(props: {
             }
             style={{ "view-transition-name": "live-area" }}
           >
-            <div class={"flex flex-col  gap-2 w-full "}>
-              <label htmlFor="feed" class={""}>
-                Web page address
-              </label>
+            <div class={"flex flex-col gap-2 w-full "}>
+              <div>
+                <label htmlFor="feed" class={""}>
+                  Web page address
+                </label>
+              </div>
+
               <input
                 class={
                   "border border-current/80 dark:border-current/60 rounded px-2 py-2 "
@@ -144,9 +147,13 @@ export async function Page(props: {
                 autofocus={props.context.req.query("autofocus") === "feed"}
                 required
               />
+              <p class={"text-muted-foreground -mt-1"}>
+                Scan this page if it provides any RSS feeds
+              </p>
             </div>
-            <div class={"py-4"}></div>
-            <SubmitButton type="submit">Check RSS feeds</SubmitButton>
+
+            <div class={"py-3"}></div>
+            <SubmitButton type="submit">Scan the page</SubmitButton>
           </form>
         </>
       )}
