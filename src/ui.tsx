@@ -46,7 +46,7 @@ export async function Page(props: {
             <ArrowRight class="w-4 h-4 -scale-x-100 -translate-y-0.5 inline mr-0.5" />
             Go to search
           </a>
-          <div class={"text-5xl md:text-5xl"}>{heading}</div>
+          <div class={"text-5xl"}>{heading}</div>
           <h2 class={"text-muted-foreground"}>
             {feedCount === 0
               ? "No feeds were"
