@@ -7,7 +7,7 @@
   --font-old-standard: "Old Standard TT", serif;
 
   --color-muted-foreground: var(--color-slate-500);
-  --color-foreground: var(--color-slate-900);
+  --color-foreground: var(--color-slate-800);
   --color-background: var(--color-slate-50);
   --color-primary: var(--color-slate-800);
   --color-accent: var(--color-orange-300);
@@ -29,6 +29,10 @@
 
 a {
   @apply underline-offset-4;
+}
+
+a,button {
+    @apply active:scale-97 transition-transform
 }
 
 @view-transition {

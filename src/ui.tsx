@@ -24,7 +24,7 @@ export async function Page(props: {
     >
       <span>Does it</span>{" "}
       <span class={"text-nowrap"}>
-        <span class={"font-bitcount font-light"}>RSS</span>?
+        <span class={"font-bitcount font-light"}>RSS?</span>
       </span>
     </h1>
   );
@@ -46,8 +46,8 @@ export async function Page(props: {
             <ArrowRight class="w-4 h-4 -scale-x-100 -translate-y-0.5 inline mr-0.5" />
             Go to search
           </a>
-          <div class={"text-5xl"}>{heading}</div>
-          <h2 class={"text-muted-foreground"}>
+          <div class={"text-5xl dark:font-light"}>{heading}</div>
+          <h2 class={"text-muted-foreground dark:font-light"}>
             {feedCount === 0
               ? "No feeds were"
               : feedCount === 1
@@ -57,7 +57,7 @@ export async function Page(props: {
             <a
               href={resultUrl?.href}
               style={{ "view-transition-name": "hostname" }}
-              class={"break-all underline hover:no-underline"}
+              class={"break-all underline hover:no-underline inline-block"}
             >
               {resultUrl?.hostname ?? props.result?.urlParam ?? "it"}
             </a>
@@ -71,33 +71,20 @@ export async function Page(props: {
                     <li class="py-4 mb-4 w-[80ch] max-w-[90vw] relative">
                       <dl>
                         <dt class={"hidden"}>title</dt>
-                        <dd class={"sm font-bold sm:max-w-2/3"}>
+                        <dd class={"sm font-bold dark:font-medium sm:max-w-2/3"}>
                           {item.content.title}
                         </dd>
 
                         <dt class={"hidden"}>link</dt>
                         <div
                           class={
-                            "text-muted-foreground flex flex-wrap gap-x-1 sm:max-w-2/3 mb-1"
+                            "text-muted-foreground flex flex-wrap gap-x-1 sm:max-w-2/3 mb-1 dark:font-light"
                           }
                         >
-                          <dt class={"hidden"}>json feed</dt>
                           <dd>
                             <a
                               class={
-                                "underline hover:no-underline underline-offset-1 wrap-break-word"
-                              }
-                              href={`${item.parseLink}?pretty`}
-                            >
-                              JSON feed
-                            </a>
-                            ,
-                          </dd>
-
-                          <dd>
-                            <a
-                              class={
-                                "underline hover:no-underline underline-offset-1 wrap-break-word"
+                                "inline-block underline hover:no-underline underline-offset-1 wrap-break-word"
                               }
                               href={item.url}
                             >
@@ -107,10 +94,21 @@ export async function Page(props: {
                         </div>
 
                         <dt class={"hidden"}>description</dt>
-                        <dd>
+                        <dd class={"dark:font-light"}>
                           {item.content.description || "Description not found"}
                         </dd>
                       </dl>
+
+                      <div class={'flex justify-end'}>
+                        <a
+                          class={
+                            "sm:absolute mt-2 top-2 right-0 text-foreground/80 hover:bg-foreground/5 border border-slate-300 dark:border-current/30 text-sm py-1 rounded-md px-2 dark:font-light"
+                          }
+                          href={`${item.parseLink}?pretty`}
+                        >
+                          Parse to JSON
+                        </a>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -120,7 +118,7 @@ export async function Page(props: {
         </div>
       ) : (
         <>
-          <div class={"mt-[15svh] mb-16 text-7xl md:text-9xl font-thin"}>
+          <div class={"mt-[15svh] mb-10 text-7xl md:text-9xl font-thin"}>
             {heading}
           </div>
           <form
@@ -131,14 +129,14 @@ export async function Page(props: {
           >
             <div class={"flex flex-col gap-2 w-full "}>
               <div>
-                <label htmlFor="feed" class={""}>
+                <label htmlFor="feed" class={"dark:font-light"}>
                   Web page address
                 </label>
               </div>
 
               <input
                 class={
-                  "border border-current/80 dark:border-current/60 rounded px-2 py-2 "
+                  "border border-slate-300 dark:border-current/30 rounded-md px-2 py-2 dark:font-light"
                 }
                 name="feed"
                 id="feed"
@@ -147,8 +145,8 @@ export async function Page(props: {
                 autofocus={props.context.req.query("autofocus") === "feed"}
                 required
               />
-              <p class={"text-muted-foreground -mt-1"}>
-                Scan this page if it provides any RSS feeds
+              <p class={"text-muted-foreground -mt-1 dark:font-light"}>
+                Insert a web page URL to scan it for RSS feeds
               </p>
             </div>
 
@@ -171,7 +169,7 @@ function SubmitButton(
     {
       ...props,
       class: clsx(
-        "group hover:border-current bg-primary dark:bg-accent p-2 px-4 rounded text-background text-xl m-2 flex items-center-safe font-bitcount-single active:scale-97",
+        "group hover:border-current bg-primary dark:bg-accent p-2 px-4 rounded text-background text-xl m-2 flex items-center-safe font-bitcount-single",
         props.class,
       ),
     },
