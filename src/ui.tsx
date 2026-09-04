@@ -71,7 +71,9 @@ export async function Page(props: {
                     <li class="py-4 mb-4 w-[80ch] max-w-[90vw] relative">
                       <dl>
                         <dt class={"hidden"}>title</dt>
-                        <dd class={"sm font-bold dark:font-medium sm:max-w-2/3"}>
+                        <dd
+                          class={"sm font-bold dark:font-medium sm:max-w-2/3"}
+                        >
                           {item.content.title}
                         </dd>
 
@@ -99,7 +101,7 @@ export async function Page(props: {
                         </dd>
                       </dl>
 
-                      <div class={'flex justify-end'}>
+                      <div class={"flex justify-end"}>
                         <a
                           class={
                             "sm:absolute mt-2 top-2 right-0 text-foreground/80 hover:bg-foreground/5 border border-slate-300 dark:border-current/30 text-sm py-1 rounded-md px-2 dark:font-light"
